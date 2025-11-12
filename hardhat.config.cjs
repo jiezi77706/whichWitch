@@ -1,11 +1,7 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 
-// Load environment variables
-import dotenv from "dotenv";
-dotenv.config();
-
-const config: HardhatUserConfig = {
+module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
@@ -40,5 +36,3 @@ const config: HardhatUserConfig = {
     apiKey: process.env.ETHERSCAN_API_KEY || "",
   },
 };
-
-export default config;

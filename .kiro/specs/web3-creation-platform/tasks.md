@@ -8,21 +8,21 @@
   - Create directory structure: contracts/, scripts/, test/
   - _Requirements: 10.1, 10.2_
 
-- [ ] 2. Implement PaymentManager smart contract
-  - [ ] 2.1 Create PaymentManager contract with balance tracking
+- [x] 2. Implement PaymentManager smart contract
+  - [x] 2.1 Create PaymentManager contract with balance tracking
     - Write contract with balances mapping and configuration variables
     - Implement custom errors for gas efficiency
     - Add ReentrancyGuard from OpenZeppelin
     - _Requirements: 7.3, 9.1, 9.3_
   
-  - [ ] 2.2 Implement tip functionality
+  - [x] 2.2 Implement tip functionality
     - Write tipCreator function that accepts payable ETH
     - Update creator balance directly (100% to creator)
     - Emit TipReceived event with tipper, creator, amount, timestamp
     - Add validation for zero amount
     - _Requirements: 4.1, 4.2, 4.3_
   
-  - [ ] 2.3 Implement revenue distribution logic
+  - [x] 2.3 Implement revenue distribution logic
     - Write distributeRevenue internal function
     - Implement chain traversal to get all ancestors
     - Calculate 50/50 split between direct creator and ancestor pool
@@ -30,7 +30,7 @@
     - Emit RevenueDistributed event with all recipients and amounts
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
   
-  - [ ] 2.4 Implement withdrawal functionality
+  - [x] 2.4 Implement withdrawal functionality
     - Write withdraw function with reentrancy protection
     - Follow checks-effects-interactions pattern
     - Reset balance before transfer
@@ -38,7 +38,7 @@
     - Handle transfer failures with custom error
     - _Requirements: 7.5_
   
-  - [ ] 2.5 Add view functions for balance queries
+  - [x] 2.5 Add view functions for balance queries
     - Implement getBalance function
     - _Requirements: 7.3_
 
