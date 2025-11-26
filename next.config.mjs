@@ -16,13 +16,16 @@ const nextConfig = {
       '@': './src/ui',
     };
     
-    // 修复 MetaMask SDK 的 React Native 依赖问题
+    // 修复 MetaMask SDK 和其他依赖的问题
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         '@react-native-async-storage/async-storage': false,
         'react-native': false,
         'react-native-randombytes': false,
+        'pino-pretty': false,
+        'lokijs': false,
+        'encoding': false,
       };
     }
     
