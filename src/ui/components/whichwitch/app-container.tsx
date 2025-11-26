@@ -38,17 +38,6 @@ export function WhichwitchApp() {
   const handleUnsave = (workId: number) => {
     // 将使用 collection.service 实现
     console.log('Unsave work:', workId)
-        if (w.id === workId) {
-          return {
-            ...w,
-            savedAt: null,
-            savedFolder: null,
-            collectionStatus: "none",
-          }
-        }
-        return w
-      }),
-    )
   }
 
   const handleCreateFolder = (name: string) => {
