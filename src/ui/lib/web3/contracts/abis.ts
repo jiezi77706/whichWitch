@@ -1,47 +1,146 @@
-// 智能合约 ABI
-// 这些 ABI 需要从编译后的合约中导出
-// 运行 npm run compile 后，从 contracts/artifacts 中获取
-
+// 智能合约 ABI (JSON 格式)
 export const CreationManagerABI = [
-  // 事件
-  "event WorkRegistered(uint256 indexed workId, address indexed creator, uint256 licenseFee, bool derivativeAllowed, string metadataURI, uint256 timestamp)",
-  "event DerivativeWorkRegistered(uint256 indexed workId, uint256 indexed parentId, address indexed creator, uint256 licenseFee, bool derivativeAllowed, string metadataURI, uint256 timestamp)",
-  
-  // 创建原创作品
-  "function registerOriginalWork(uint256 licenseFee, bool derivativeAllowed, string calldata metadataURI) external returns (uint256 workId)",
-  
-  // 创建衍生作品
-  "function registerDerivativeWork(uint256 parentId, uint256 licenseFee, bool derivativeAllowed, string calldata metadataURI) external returns (uint256 workId)",
-  
-  // 查询函数
-  "function getWork(uint256 workId) external view returns (tuple(uint256 id, address creator, uint256 parentId, uint256 licenseFee, uint256 timestamp, bool derivativeAllowed, bool exists))",
-  "function getWorksByCreator(address creator) external view returns (uint256[])",
-  "function getDerivatives(uint256 parentId) external view returns (uint256[])",
-  "function getAncestorChain(uint256 workId) external view returns (address[])",
+  {
+    type: 'function',
+    name: 'registerOriginalWork',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'licenseFee', type: 'uint256' },
+      { name: 'derivativeAllowed', type: 'bool' },
+      { name: 'metadataURI', type: 'string' }
+    ],
+    outputs: [{ name: 'workId', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'registerDerivativeWork',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'parentId', type: 'uint256' },
+      { name: 'licenseFee', type: 'uint256' },
+      { name: 'derivativeAllowed', type: 'bool' },
+      { name: 'metadataURI', type: 'string' }
+    ],
+    outputs: [{ name: 'workId', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'getWork',
+    stateMutability: 'view',
+    inputs: [{ name: 'workId', type: 'uint256' }],
+    outputs: [
+      {
+        type: 'tuple',
+        components: [
+          { name: 'id', type: 'uint256' },
+          { name: 'creator', type: 'address' },
+          { name: 'parentId', type: 'uint256' },
+          { name: 'licenseFee', type: 'uint256' },
+          { name: 'timestamp', type: 'uint256' },
+          { name: 'derivativeAllowed', type: 'bool' },
+          { name: 'exists', type: 'bool' }
+        ]
+      }
+    ]
+  },
+  {
+    type: 'function',
+    name: 'getWorksByCreator',
+    stateMutability: 'view',
+    inputs: [{ name: 'creator', type: 'address' }],
+    outputs: [{ type: 'uint256[]' }]
+  },
+  {
+    type: 'function',
+    name: 'getDerivatives',
+    stateMutability: 'view',
+    inputs: [{ name: 'parentId', type: 'uint256' }],
+    outputs: [{ type: 'uint256[]' }]
+  },
+  {
+    type: 'function',
+    name: 'getAncestorChain',
+    stateMutability: 'view',
+    inputs: [{ name: 'workId', type: 'uint256' }],
+    outputs: [{ type: 'address[]' }]
+  },
+  {
+    type: 'event',
+    name: 'WorkRegistered',
+    inputs: [
+      { name: 'workId', type: 'uint256', indexed: true },
+      { name: 'creator', type: 'address', indexed: true },
+      { name: 'licenseFee', type: 'uint256', indexed: false },
+      { name: 'derivativeAllowed', type: 'bool', indexed: false },
+      { name: 'metadataURI', type: 'string', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false }
+    ]
+  }
 ] as const;
 
 export const PaymentManagerABI = [
-  // 事件
-  "event PaymentProcessed(uint256 indexed workId, address indexed payer, uint256 totalAmount, uint256 timestamp)",
-  "event RevenueDistributed(uint256 indexed workId, address indexed recipient, uint256 amount)",
-  
-  // 支付函数
-  "function processPayment(uint256 workId) external payable",
-  
-  // 查询函数
-  "function calculateDistribution(uint256 workId, uint256 amount) external view returns (address[], uint256[])",
-  "function getTotalRevenue(uint256 workId) external view returns (uint256)",
-  "function getCreatorRevenue(address creator) external view returns (uint256)",
+  {
+    type: 'function',
+    name: 'processPayment',
+    stateMutability: 'payable',
+    inputs: [{ name: 'workId', type: 'uint256' }],
+    outputs: []
+  },
+  {
+    type: 'function',
+    name: 'calculateDistribution',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'workId', type: 'uint256' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [
+      { type: 'address[]' },
+      { type: 'uint256[]' }
+    ]
+  },
+  {
+    type: 'function',
+    name: 'getTotalRevenue',
+    stateMutability: 'view',
+    inputs: [{ name: 'workId', type: 'uint256' }],
+    outputs: [{ type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'getCreatorRevenue',
+    stateMutability: 'view',
+    inputs: [{ name: 'creator', type: 'address' }],
+    outputs: [{ type: 'uint256' }]
+  }
 ] as const;
 
 export const AuthorizationManagerABI = [
-  // 事件
-  "event AuthorizationGranted(uint256 indexed workId, address indexed user, uint256 licenseFee, uint256 timestamp)",
-  
-  // 授权函数
-  "function requestAuthorization(uint256 workId) external payable",
-  
-  // 查询函数
-  "function hasAuthorization(address user, uint256 workId) external view returns (bool)",
-  "function getAuthorizationTimestamp(address user, uint256 workId) external view returns (uint256)",
+  {
+    type: 'function',
+    name: 'requestAuthorization',
+    stateMutability: 'payable',
+    inputs: [{ name: 'workId', type: 'uint256' }],
+    outputs: []
+  },
+  {
+    type: 'function',
+    name: 'hasAuthorization',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'user', type: 'address' },
+      { name: 'workId', type: 'uint256' }
+    ],
+    outputs: [{ type: 'bool' }]
+  },
+  {
+    type: 'function',
+    name: 'getAuthorizationTimestamp',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'user', type: 'address' },
+      { name: 'workId', type: 'uint256' }
+    ],
+    outputs: [{ type: 'uint256' }]
+  }
 ] as const;
