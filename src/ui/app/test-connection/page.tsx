@@ -6,6 +6,9 @@ import { CONTRACT_ADDRESSES, CHAIN_CONFIG } from '@/lib/web3/contracts/addresses
 import { CreationManagerABI } from '@/lib/web3/contracts/abis';
 import { supabase } from '@/lib/supabase/client';
 
+// 禁用静态生成
+export const dynamic = 'force-dynamic';
+
 export default function TestConnectionPage() {
   const { address, isConnected } = useAccount();
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
@@ -16,7 +19,7 @@ export default function TestConnectionPage() {
     address: CONTRACT_ADDRESSES.creation,
     abi: CreationManagerABI,
     functionName: 'getWork',
-    args: [1n],
+    args: [BigInt(1)],
   });
 
   // 测试 Supabase 连接
