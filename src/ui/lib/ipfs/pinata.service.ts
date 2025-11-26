@@ -2,9 +2,9 @@
  * Pinata IPFS 服务 - 处理文件上传到 IPFS
  */
 
-const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY || process.env.PINATA_API_KEY;
-const PINATA_SECRET = process.env.NEXT_PUBLIC_PINATA_API_SECRET || process.env.PINATA_API_SECRET;
-const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT || process.env.PINATA_JWT;
+const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY;
+const PINATA_SECRET = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
+const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const PINATA_API_URL = 'https://api.pinata.cloud';
 const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
