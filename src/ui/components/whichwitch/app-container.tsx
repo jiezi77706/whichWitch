@@ -22,32 +22,22 @@ export type UserProfile = {
 export function WhichwitchApp() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [activeTab, setActiveTab] = useState("square")
-
-  const [works, setWorks] = useState(initialWorks)
   const [folders, setFolders] = useState(["Inspiration", "To Remix", "Favorites", "Research"])
 
+  // TODO: 这些函数需要连接到实际的服务
   const handleAddWork = (newWork: any) => {
-    setWorks((prev) => [{ ...newWork, id: Date.now() }, ...prev])
+    // 将在 upload-view 中实现
+    console.log('Add work:', newWork)
   }
 
   const handleCollect = (workId: number, folderName: string) => {
-    setWorks((prev) =>
-      prev.map((w) => {
-        if (w.id === workId) {
-          return {
-            ...w,
-            savedAt: new Date().toLocaleString(),
-            savedFolder: folderName,
-          }
-        }
-        return w
-      }),
-    )
+    // 将使用 collection.service 实现
+    console.log('Collect work:', workId, folderName)
   }
 
   const handleUnsave = (workId: number) => {
-    setWorks((prev) =>
-      prev.map((w) => {
+    // 将使用 collection.service 实现
+    console.log('Unsave work:', workId)
         if (w.id === workId) {
           return {
             ...w,
@@ -143,7 +133,6 @@ export function WhichwitchApp() {
               </TabsContent>
               <TabsContent value="square" className="mt-0">
                 <SquareView
-                  works={works}
                   onCollect={handleCollect}
                   folders={folders}
                   onCreateFolder={handleCreateFolder}
@@ -151,14 +140,13 @@ export function WhichwitchApp() {
               </TabsContent>
               <TabsContent value="collections" className="mt-0">
                 <CollectionsView
-                  works={works}
                   onUnsave={handleUnsave}
                   folders={folders}
                   onCreateFolder={handleCreateFolder}
                 />
               </TabsContent>
               <TabsContent value="profile" className="mt-0">
-                <ProfileView user={user} works={works} />
+                <ProfileView user={user} />
               </TabsContent>
             </motion.div>
           </AnimatePresence>

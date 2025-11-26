@@ -18,16 +18,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { GitFork, Wallet, Folder, Upload } from "lucide-react"
 
 export function CollectionsView({
-  works,
   onUnsave,
   folders,
   onCreateFolder,
 }: {
-  works: any[]
   onUnsave: (id: number) => void
   folders: string[]
   onCreateFolder: (name: string) => void
 }) {
+  // TODO: 使用 useCollections Hook 获取真实数据
+  const works: any[] = [] // 临时空数组
   const [remixModalOpen, setRemixModalOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [newFolderModalOpen, setNewFolderModalOpen] = useState(false)

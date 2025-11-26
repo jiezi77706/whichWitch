@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
-export function ProfileView({ user, works }: { user: UserProfile; works: any[] }) {
+export function ProfileView({ user }: { user: UserProfile }) {
+  // TODO: 使用 useWorks Hook 获取用户作品
+  const works: any[] = [] // 临时空数组
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const myWorks = works.filter((w) => !w.isRemix).slice(0, 6)

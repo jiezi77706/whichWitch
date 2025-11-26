@@ -9,10 +9,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // 指定源代码目录
-  experimental: {
-    appDir: true,
-  },
   // 配置路径别名
   webpack: (config) => {
     config.resolve.alias = {

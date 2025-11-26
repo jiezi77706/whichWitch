@@ -3,21 +3,23 @@
 import { useState } from "react"
 import { WorkCard } from "./work-card"
 import { Input } from "@/components/ui/input"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useWorks } from "@/lib/hooks/useWorks"
+import { useUser } from "@/lib/hooks/useUser"
 
 export function SquareView({
-  works,
   onCollect,
   folders,
   onCreateFolder,
 }: {
-  works: any[]
   onCollect: (id: number, folder: string) => void
   folders: string[]
   onCreateFolder: (name: string) => void
 }) {
   const [search, setSearch] = useState("")
+  const { works, loading, error } = useWorks()
+  const { user } = useUser()
 
   const COMMON_FILTERS = ["Digital", "Wood", "Clay", "Glass", "Cyberpunk", "Minimalist"]
 
@@ -25,11 +27,26 @@ export function SquareView({
     setSearch(search === tag ? "" : tag)
   }
 
-  const filteredWorks = works.filter(
+  // 转换数据库作品格式为组件需要的格式
+  const transformedWorks = works.map(work => ({
+    id: work.work_id,
+    title: work.title,
+    author: work.creator_address.slice(0, 6) + '...' + work.creator_address.slice(-4),
+    image: work.image_url,
+    tags: work.tags || [],
+    material: work.material?.join(', ') || '',
+    likes: 0, // TODO: 从统计表获取
+    allowRemix: work.allow_remix,
+    isRemix: work.is_remix,
+    story: work.story || work.description || '',
+    createdAt: work.created_at,
+  }))
+
+  const filteredWorks = transformedWorks.filter(
     (w) =>
       w.title.toLowerCase().includes(search.toLowerCase()) ||
       w.author.toLowerCase().includes(search.toLowerCase()) ||
-      w.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
+      w.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase())) ||
       w.material?.toLowerCase().includes(search.toLowerCase()),
   )
 
@@ -77,18 +94,36 @@ export function SquareView({
         </div>
       </div>
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredWorks.map((work) => (
-          <WorkCard
-            key={work.id}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground">Loading works...</span>
+        </div>
+      ) : error ? (
+        <div className="text-center py-20">
+          <p className="text-red-500">Failed to load works. Please try again.</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      ) : filteredWorks.length === 0 ? (
+        <div className="text-center py-20 text-muted-foreground">
+          <p>No works found. {search && 'Try a different search term.'}</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredWorks.map((work) => (
+            <WorkCard
+              key={work.id}
             work={work}
             allowTip={true}
             onCollect={(folder) => onCollect(work.id, folder)}
             folders={folders}
             onCreateFolder={onCreateFolder}
           />
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

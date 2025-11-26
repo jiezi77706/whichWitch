@@ -2,7 +2,7 @@
 
 import type React from "react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,41 +10,77 @@ import { Label } from "@/components/ui/label"
 import { Loader2, Wallet, Sparkles, X } from "lucide-react"
 import type { UserProfile } from "./app-container"
 import { Badge } from "@/components/ui/badge"
+import { useAccount, useConnect, useDisconnect } from "wagmi"
+import { useUser } from "@/lib/hooks/useUser"
 
 export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) {
   const [step, setStep] = useState<"welcome" | "profile">("welcome")
-  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
     skills: [] as string[],
   })
   const [skillInput, setSkillInput] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  // 真实的钱包连接和用户数据
+  const { address, isConnected } = useAccount()
+  const { connect, connectors, isPending } = useConnect()
+  const { disconnect } = useDisconnect()
+  const { user, isNewUser, registerUser, loading: userLoading } = useUser()
 
   const commonSkills = ["Ceramics", "Woodworking", "Digital Art", "Embroidery", "Pottery", "3D Modeling"]
 
+  // 当钱包连接成功后，检查用户状态
+  useEffect(() => {
+    if (isConnected && address) {
+      if (user) {
+        // 老用户，直接登录
+        onLogin({
+          did: `did:whichwitch:${address}`,
+          name: user.name,
+          bio: user.bio || "",
+          skills: user.skills || [],
+        })
+      } else if (isNewUser && step === "welcome") {
+        // 新用户，显示注册表单
+        setStep("profile")
+      }
+    }
+  }, [isConnected, address, user, isNewUser, step])
+
   const handleConnect = () => {
-    setLoading(true)
-    // Simulate wallet connection
-    setTimeout(() => {
-      setLoading(false)
-      setStep("profile")
-    }, 1500)
+    // 使用第一个可用的连接器（通常是 MetaMask）
+    if (connectors.length > 0) {
+      connect({ connector: connectors[0] })
+    }
   }
 
-  const handleCreateProfile = (e: React.FormEvent) => {
+  const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    // Simulate profile creation on chain
-    setTimeout(() => {
-      setLoading(false)
-      onLogin({
-        did: "did:whichwitch:0x1234...5678",
+    if (!address) return
+    
+    setError(null)
+    
+    try {
+      // 创建用户并初始化默认文件夹
+      const newUser = await registerUser({
         name: formData.name || "Anonymous Artisan",
         bio: formData.bio || "Digital Craftsman",
         skills: formData.skills,
       })
-    }, 1500)
+
+      // 登录
+      onLogin({
+        did: `did:whichwitch:${address}`,
+        name: newUser.name,
+        bio: newUser.bio || "",
+        skills: newUser.skills || [],
+      })
+    } catch (err) {
+      console.error('Error creating profile:', err)
+      setError('Failed to create profile. Please try again.')
+    }
   }
 
   const addSkill = (skill: string) => {
@@ -88,15 +124,21 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
                 size="lg"
                 className="w-full h-14 text-lg font-medium relative overflow-hidden group"
                 onClick={handleConnect}
-                disabled={loading}
+                disabled={isPending || isConnected || userLoading}
               >
-                {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wallet className="mr-2 h-5 w-5" />}
-                Connect Wallet
+                {(isPending || userLoading) ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <Wallet className="mr-2 h-5 w-5" />
+                )}
+                {userLoading ? 'Loading...' : isConnected ? 'Wallet Connected' : 'Connect Wallet'}
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </Button>
-              <Button variant="outline" size="lg" className="w-full h-14 text-lg bg-transparent">
-                Create New Account
-              </Button>
+              {isConnected && address && (
+                <p className="text-center text-sm text-muted-foreground font-mono">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </p>
+              )}
             </div>
             <p className="text-center text-xs text-muted-foreground">
               By connecting, you agree to our Terms of Service and Protocol Rules.
@@ -113,6 +155,12 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
               <h2 className="text-xl font-semibold">Create Identity</h2>
               <p className="text-sm text-muted-foreground">Set up your artisan profile on the genealogy tree.</p>
             </div>
+
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-sm text-red-500">
+                {error}
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="space-y-2">
@@ -180,12 +228,12 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? (
+            <Button type="submit" className="w-full h-12" disabled={userLoading}>
+              {userLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Mint DID Identity <Sparkles className="ml-2 h-4 w-4" />
+                  Create Profile <Sparkles className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
