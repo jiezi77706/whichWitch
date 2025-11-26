@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { UserProfile } from "./app-container"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -11,14 +11,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { useAccount } from "wagmi"
+import { formatEther } from "viem"
+import { useUser } from "@/lib/hooks/useUser"
+import { useWorks } from "@/lib/hooks/useWorks"
+import { getCreatorRevenue } from "@/lib/web3/services/contract.service"
 
 export function ProfileView({ user }: { user: UserProfile }) {
-  // TODO: 使用 useWorks Hook 获取用户作品
-  const works: any[] = [] // 临时空数组
+  const { address } = useAccount()
+  const { user: dbUser } = useUser()
+  const { works, loading: worksLoading } = useWorks(address)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [balance, setBalance] = useState("0")
+  const [loadingBalance, setLoadingBalance] = useState(true)
+
+  useEffect(() => {
+    if (address) {
+      loadBalance()
+    }
+  }, [address])
+
+  const loadBalance = async () => {
+    if (!address) return
+    
+    setLoadingBalance(true)
+    try {
+      const revenue = await getCreatorRevenue(address)
+      setBalance(formatEther(revenue))
+    } catch (error) {
+      console.error("Error loading balance:", error)
+      setBalance("0")
+    } finally {
+      setLoadingBalance(false)
+    }
+  }
 
   const myWorks = works.filter((w) => !w.isRemix).slice(0, 6)
-  const myRemixes = works.filter((w) => w.isRemix || w.collectionStatus === "approved").slice(0, 4)
+  const myRemixes = works.filter((w) => w.isRemix).slice(0, 4)
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
@@ -38,7 +67,7 @@ export function ProfileView({ user }: { user: UserProfile }) {
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
                   <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-mono border border-primary/20">
-                    DID: {user.did.slice(0, 12)}...
+                    {dbUser ? `Platform ID: ${dbUser.platformId}` : `DID: ${user.did.slice(0, 12)}...`}
                   </span>
                 </div>
 
@@ -65,7 +94,9 @@ export function ProfileView({ user }: { user: UserProfile }) {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Balance</p>
-                    <p className="text-xl font-mono font-bold">4.205 ETH</p>
+                    <p className="text-xl font-mono font-bold">
+                      {loadingBalance ? "Loading..." : `${parseFloat(balance).toFixed(4)} ETH`}
+                    </p>
                   </div>
                 </div>
                 <Button size="sm" className="gap-2 h-8 shrink-0">
@@ -99,19 +130,31 @@ export function ProfileView({ user }: { user: UserProfile }) {
         </TabsList>
 
         <TabsContent value="originals" className="space-y-4 mt-6">
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {myWorks.map((work) => (
-              <WorkDetailTrigger key={work.id} work={work} />
-            ))}
-          </div>
+          {worksLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading works...</div>
+          ) : myWorks.length > 0 ? (
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {myWorks.map((work) => (
+                <WorkDetailTrigger key={work.id} work={work} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">No original works yet</div>
+          )}
         </TabsContent>
 
         <TabsContent value="remixes" className="space-y-4 mt-6">
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {myRemixes.map((work) => (
-              <WorkDetailTrigger key={work.id} work={work} />
-            ))}
-          </div>
+          {worksLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading remixes...</div>
+          ) : myRemixes.length > 0 ? (
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {myRemixes.map((work) => (
+                <WorkDetailTrigger key={work.id} work={work} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">No remixes yet</div>
+          )}
         </TabsContent>
       </Tabs>
 

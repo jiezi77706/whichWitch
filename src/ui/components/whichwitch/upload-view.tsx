@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,32 +11,123 @@ import { Textarea } from "@/components/ui/textarea"
 import type { UserProfile } from "./app-container"
 import { UploadCloud, CheckCircle2, X } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
-import { works } from "@/lib/mock-data" // Importing mock works to simulate selection from saved approved works
+import { useAccount } from "wagmi"
+import { uploadFileToPinata, createAndUploadMetadata } from "@/lib/ipfs/pinata.service"
+import { registerOriginalWork, registerDerivativeWork } from "@/lib/web3/services/contract.service"
+import { createWork } from "@/lib/supabase/services"
+import { useCollections } from "@/lib/hooks/useCollections"
+import { useUser } from "@/lib/hooks/useUser"
 
-export function UploadView({ user, isRemix = false }: { user: UserProfile; isRemix?: boolean }) {
+export function UploadView({ user, isRemix = false, onAddWork }: { 
+  user: UserProfile; 
+  isRemix?: boolean;
+  onAddWork?: (work: any) => void;
+}) {
+  const { address } = useAccount()
+  const { user: dbUser } = useUser()
+  const { collections, authStatuses } = useCollections(dbUser?.id)
+  
   const [mode, setMode] = useState<"original" | "remix">("original")
   const [selectedParentWork, setSelectedParentWork] = useState<number | null>(null)
 
-  const [status, setStatus] = useState<"idle" | "uploading" | "success">("idle")
+  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
   const [file, setFile] = useState<File | null>(null)
   const [allowRemix, setAllowRemix] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [currentTag, setCurrentTag] = useState("")
   const [materialTags, setMaterialTags] = useState<string[]>([])
   const [currentMaterial, setCurrentMaterial] = useState("")
+  const [errorMessage, setErrorMessage] = useState("")
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    title: "",
+    story: "",
+    licenseFee: "0.05"
+  })
 
   const SUGGESTED_TAGS = ["Cyberpunk", "Minimalist", "Nature", "Abstract", "Surreal"]
   const SUGGESTED_MATERIALS = ["Digital", "Wood", "Clay", "Glass", "Metal"]
 
-  // Mock approved works for remix selection
-  const approvedWorks = works.filter((w) => w.allowRemix && w.collectionStatus === "approved")
+  // Get approved works from collections
+  const approvedWorks = collections?.filter(c => 
+    authStatuses[c.work_id] === 'approved' && c.work?.allowRemix
+  ) || []
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!file || !address) return
+    if (mode === "remix" && !selectedParentWork) return
+
     setStatus("uploading")
-    setTimeout(() => {
+    setErrorMessage("")
+
+    try {
+      // 1. 上传图片到 IPFS
+      console.log("Uploading image to IPFS...")
+      const imageHash = await uploadFileToPinata(file)
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imageHash}`
+      
+      // 2. 创建并上传 metadata
+      console.log("Creating metadata...")
+      const metadataHash = await createAndUploadMetadata({
+        title: formData.title,
+        description: formData.story,
+        story: formData.story,
+        imageHash: imageHash,
+        material: materialTags,
+        tags: tags,
+        creator: address,
+        parentWorkId: mode === "remix" ? selectedParentWork : undefined,
+      })
+      const metadataUri = `ipfs://${metadataHash}`
+      
+      // 3. 调用合约注册作品
+      console.log("Registering work on blockchain...")
+      let contractResult
+      if (mode === "remix" && selectedParentWork) {
+        contractResult = await registerDerivativeWork(
+          BigInt(selectedParentWork),
+          formData.licenseFee,
+          allowRemix,
+          metadataUri
+        )
+      } else {
+        contractResult = await registerOriginalWork(
+          formData.licenseFee,
+          allowRemix,
+          metadataUri
+        )
+      }
+      
+      // 4. 保存到数据库
+      console.log("Saving to database...")
+      const newWork = await createWork({
+        workId: Number(contractResult.workId), // TODO: 需要从合约事件正确解析
+        creatorAddress: address,
+        title: formData.title,
+        description: formData.story,
+        imageUrl: imageUrl,
+        metadataUri: metadataUri,
+        allowRemix: allowRemix,
+        licenseFee: formData.licenseFee,
+        isRemix: mode === "remix",
+        parentWorkId: mode === "remix" ? selectedParentWork : null,
+      })
+      
+      console.log("Work uploaded successfully!")
       setStatus("success")
-    }, 2500)
+      
+      // 通知父组件
+      if (onAddWork) {
+        onAddWork(newWork)
+      }
+      
+    } catch (error) {
+      console.error("Upload failed:", error)
+      setErrorMessage(error instanceof Error ? error.message : "Upload failed. Please try again.")
+      setStatus("error")
+    }
   }
 
   const addTag = (val: string, list: string[], setList: any, currentSetter: any) => {
@@ -66,9 +157,38 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
             Your work has been recorded on the blockchain and added to the genealogy tree.
           </p>
         </div>
-        {/* ... existing success UI ... */}
-        <Button onClick={() => setStatus("idle")} className="w-full max-w-xs">
+        <Button onClick={() => {
+          setStatus("idle")
+          setFile(null)
+          setFormData({ title: "", story: "", licenseFee: "0.05" })
+          setTags([])
+          setMaterialTags([])
+          setSelectedParentWork(null)
+        }} className="w-full max-w-xs">
           Upload Another
+        </Button>
+      </motion.div>
+    )
+  }
+
+  if (status === "error") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6"
+      >
+        <div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center">
+          <X className="w-10 h-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Upload Failed</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {errorMessage}
+          </p>
+        </div>
+        <Button onClick={() => setStatus("idle")} className="w-full max-w-xs">
+          Try Again
         </Button>
       </motion.div>
     )
@@ -107,17 +227,17 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
           <Label>Select Parent Work</Label>
           <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
             {approvedWorks.length > 0 ? (
-              approvedWorks.map((work) => (
+              approvedWorks.map((collection) => (
                 <div
-                  key={work.id}
-                  onClick={() => setSelectedParentWork(work.id)}
-                  className={`relative cursor-pointer group rounded-lg overflow-hidden border-2 transition-all ${selectedParentWork === work.id ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
+                  key={collection.work_id}
+                  onClick={() => setSelectedParentWork(collection.work_id)}
+                  className={`relative cursor-pointer group rounded-lg overflow-hidden border-2 transition-all ${selectedParentWork === collection.work_id ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
                 >
                   <div className="aspect-square bg-muted">
-                    <img src={work.image || "/placeholder.svg"} className="w-full h-full object-cover" />
+                    <img src={collection.work?.imageUrl || "/placeholder.svg"} className="w-full h-full object-cover" />
                   </div>
-                  <div className="p-2 bg-background/90 text-xs font-medium truncate">{work.title}</div>
-                  {selectedParentWork === work.id && (
+                  <div className="p-2 bg-background/90 text-xs font-medium truncate">{collection.work?.title}</div>
+                  {selectedParentWork === collection.work_id && (
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                       <CheckCircle2 className="w-3 h-3" />
                     </div>
@@ -176,7 +296,13 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
-            <Input id="title" placeholder="The Whispering Vase" required />
+            <Input 
+              id="title" 
+              placeholder="The Whispering Vase" 
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              required 
+            />
           </div>
 
           <div className="space-y-2">
@@ -185,6 +311,8 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
               id="story"
               placeholder="What inspired this piece? Share the origin..."
               className="min-h-[100px]"
+              value={formData.story}
+              onChange={(e) => setFormData(prev => ({ ...prev, story: e.target.value }))}
             />
           </div>
 
@@ -272,7 +400,13 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
           {allowRemix && (
             <div className="space-y-2 animate-in slide-in-from-top-2">
               <Label>Licensing Fee (ETH)</Label>
-              <Input type="number" step="0.01" placeholder="0.05" />
+              <Input 
+                type="number" 
+                step="0.01" 
+                placeholder="0.05"
+                value={formData.licenseFee}
+                onChange={(e) => setFormData(prev => ({ ...prev, licenseFee: e.target.value }))}
+              />
             </div>
           )}
         </div>
@@ -280,7 +414,7 @@ export function UploadView({ user, isRemix = false }: { user: UserProfile; isRem
         <Button
           type="submit"
           className="w-full h-12 text-lg"
-          disabled={!file || status === "uploading" || (mode === "remix" && !selectedParentWork)}
+          disabled={!file || !formData.title || status === "uploading" || (mode === "remix" && !selectedParentWork)}
         >
           {status === "uploading" ? "Minting..." : mode === "remix" ? "Mint Remix" : "Mint to Chain"}
         </Button>

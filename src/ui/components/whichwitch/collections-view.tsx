@@ -17,23 +17,60 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { GitFork, Wallet, Folder, Upload } from "lucide-react"
 
+import { useUser } from "@/lib/hooks/useUser"
+import { useAccount } from "wagmi"
+import { createAuthorizationRequest, updateAuthorizationStatus } from "@/lib/supabase/services"
+import { requestAuthorization } from "@/lib/web3/services/contract.service"
+import { useCollections } from "@/lib/hooks/useCollections"
+import { Loader2 } from "lucide-react"
+
 export function CollectionsView({
   onUnsave,
-  folders,
-  onCreateFolder,
+  folders: propFolders,
+  onCreateFolder: propOnCreateFolder,
 }: {
   onUnsave: (id: number) => void
   folders: string[]
   onCreateFolder: (name: string) => void
 }) {
-  // TODO: 使用 useCollections Hook 获取真实数据
-  const works: any[] = [] // 临时空数组
+  const { user } = useUser()
+  const { 
+    collections, 
+    folders: dbFolders, 
+    authStatuses, 
+    loading,
+    addFolder,
+    removeCollection 
+  } = useCollections(user?.id)
+
   const [remixModalOpen, setRemixModalOpen] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [newFolderModalOpen, setNewFolderModalOpen] = useState(false)
   const [selectedWork, setSelectedWork] = useState<any>(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState("")
+  
+  const { address } = useAccount()
 
-  const collectedWorks = works.filter((w) => w.savedAt)
+  // 使用数据库的文件夹，如果没有则使用 props
+  const folders = dbFolders.length > 0 ? dbFolders.map(f => f.name) : propFolders
+
+  // 转换数据库收藏为组件需要的格式
+  const collectedWorks = collections.map((c: any) => ({
+    id: c.works.work_id,
+    title: c.works.title,
+    author: c.works.creator_address.slice(0, 6) + '...' + c.works.creator_address.slice(-4),
+    image: c.works.image_url,
+    tags: c.works.tags || [],
+    material: c.works.material?.join(', ') || '',
+    likes: 0,
+    allowRemix: c.works.allow_remix,
+    isRemix: c.works.is_remix,
+    story: c.works.story || c.works.description || '',
+    savedAt: new Date(c.saved_at).toLocaleString(),
+    savedFolder: c.folders.name,
+    collectionStatus: authStatuses[c.works.work_id] || 'none',
+  }))
 
   // Group works by folder
   const worksByFolder: Record<string, any[]> = {}
@@ -48,6 +85,61 @@ export function CollectionsView({
     if (!worksByFolder[f]) worksByFolder[f] = []
   })
 
+  const handlePayAndMint = async () => {
+    if (!selectedWork || !address || !user) return
+
+    setPaymentLoading(true)
+    setPaymentError("")
+
+    try {
+      // 1. 创建授权请求（pending 状态）
+      console.log("Creating authorization request...")
+      await createAuthorizationRequest(address, selectedWork.id)
+      
+      // 2. 调用合约支付
+      console.log("Processing payment...")
+      const txHash = await requestAuthorization(
+        BigInt(selectedWork.id),
+        selectedWork.licenseFee || "0.05"
+      )
+      
+      // 3. 更新状态为 approved
+      console.log("Updating authorization status...")
+      await updateAuthorizationStatus(
+        address,
+        selectedWork.id,
+        'approved',
+        txHash
+      )
+      
+      console.log("Authorization granted successfully!")
+      setRemixModalOpen(false)
+      
+      // 刷新数据
+      window.location.reload() // 简单的刷新，实际应该调用 refetch
+      
+    } catch (error) {
+      console.error("Authorization failed:", error)
+      
+      // 更新状态为 failed
+      try {
+        await updateAuthorizationStatus(
+          address,
+          selectedWork.id,
+          'failed',
+          undefined,
+          error instanceof Error ? error.message : "Payment failed"
+        )
+      } catch (updateError) {
+        console.error("Failed to update status:", updateError)
+      }
+      
+      setPaymentError(error instanceof Error ? error.message : "Payment failed. Please try again.")
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
   const handleRemixClick = (work: any) => {
     if (!work.allowRemix) {
       return // Button should be disabled, but just in case
@@ -59,6 +151,33 @@ export function CollectionsView({
       setSelectedWork(work)
       setRemixModalOpen(true)
     }
+  }
+
+  const handleUnsave = async (workId: number) => {
+    try {
+      await removeCollection(workId)
+      onUnsave(workId) // 通知父组件
+    } catch (error) {
+      console.error('Failed to unsave work:', error)
+    }
+  }
+
+  const handleCreateFolder = async (name: string) => {
+    try {
+      await addFolder(name)
+      propOnCreateFolder(name) // 通知父组件
+    } catch (error) {
+      console.error('Failed to create folder:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading collections...</span>
+      </div>
+    )
   }
 
   return (
@@ -92,7 +211,7 @@ export function CollectionsView({
                       status={work.collectionStatus as any}
                       onRemix={() => handleRemixClick(work)}
                       showSavedDate={true}
-                      onUnsave={() => onUnsave(work.id)}
+                      onUnsave={() => handleUnsave(work.id)}
                     />
                   ))}
                 </div>
@@ -158,14 +277,15 @@ export function CollectionsView({
           <DialogFooter>
             <Button
               className="w-full bg-primary hover:bg-primary/90"
-              onClick={() => {
-                // For now, we'll keep local state for the modal
-                // Note: For a real app, setCollectedWorks/setStatus would need to update the parent state via a prop like onUpdateStatus
-                setRemixModalOpen(false)
-              }}
+              disabled={paymentLoading}
+              onClick={handlePayAndMint}
             >
-              <GitFork className="w-4 h-4 mr-2" /> Pay & Mint License
+              <GitFork className="w-4 h-4 mr-2" /> 
+              {paymentLoading ? "Processing..." : "Pay & Mint License"}
             </Button>
+            {paymentError && (
+              <p className="text-red-500 text-sm mt-2">{paymentError}</p>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -175,7 +295,7 @@ export function CollectionsView({
         open={newFolderModalOpen}
         onOpenChange={setNewFolderModalOpen}
         onCreate={(name: string) => {
-          onCreateFolder(name)
+          handleCreateFolder(name)
           setNewFolderModalOpen(false)
         }}
       />

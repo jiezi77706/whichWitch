@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { processPayment } from "@/lib/web3/services/contract.service"
 
 export function WorkCard({
   work,
@@ -329,7 +330,7 @@ export function WorkCard({
           setShowCollectModal(false)
         }}
       />
-      <TipModal open={showTipModal} onOpenChange={setShowTipModal} workTitle={work.title} />
+      <TipModal open={showTipModal} onOpenChange={setShowTipModal} work={work} />
       <WorkDetailDialog
         work={work}
         open={showDetailsModal}
@@ -366,26 +367,44 @@ export function WorkCard({
   )
 }
 
-function TipModal({ open, onOpenChange, workTitle }: any) {
+function TipModal({ open, onOpenChange, work }: any) {
   const [amount, setAmount] = useState("0.01")
   const [customAmount, setCustomAmount] = useState("")
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [errorMessage, setErrorMessage] = useState("")
 
-  const handleTip = () => {
-    // Logic: use custom amount if set, otherwise selected preset
+  const handleTip = async () => {
     const finalAmount = customAmount || amount
-
-    // Simulate check balance (mock logic: error if amount > 50)
-    if (Number.parseFloat(finalAmount) > 10) {
-      // Simulate insufficient balance
+    
+    if (!work?.id) {
+      setErrorMessage("Work ID not found")
       setStatus("error")
-    } else {
+      return
+    }
+
+    setStatus("loading")
+    setErrorMessage("")
+
+    try {
+      console.log(`Sending tip of ${finalAmount} ETH to work ${work.id}`)
+      
+      // 调用合约处理支付
+      const txHash = await processPayment(BigInt(work.id), finalAmount)
+      
+      console.log("Tip sent successfully:", txHash)
       setStatus("success")
+      
       setTimeout(() => {
         onOpenChange(false)
         setStatus("idle")
         setCustomAmount("")
+        setAmount("0.01")
       }, 2000)
+      
+    } catch (error) {
+      console.error("Tip failed:", error)
+      setErrorMessage(error instanceof Error ? error.message : "Failed to send tip")
+      setStatus("error")
     }
   }
 
@@ -394,15 +413,15 @@ function TipModal({ open, onOpenChange, workTitle }: any) {
       <DialogContent className="max-w-xs bg-background/95 backdrop-blur-xl border-primary/20">
         <DialogHeader>
           <DialogTitle>Tip Artist</DialogTitle>
-          <DialogDescription>Send a tip to the creator of "{workTitle}".</DialogDescription>
+          <DialogDescription>Send a tip to the creator of "{work?.title}".</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           {status === "success" ? (
             <div className="text-center text-green-500 font-bold py-4">Tip sent successfully!</div>
           ) : status === "error" ? (
             <div className="space-y-2 text-center">
-              <div className="text-red-500 font-bold">Transaction Failed</div>
-              <p className="text-xs text-muted-foreground">Insufficient wallet balance.</p>
+              <div className="text-red-500 font-bold">Tip Failed</div>
+              <p className="text-xs text-muted-foreground">{errorMessage}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -454,8 +473,8 @@ function TipModal({ open, onOpenChange, workTitle }: any) {
         ) : (
           status !== "success" && (
             <DialogFooter>
-              <Button onClick={handleTip} className="w-full">
-                Send Tip {customAmount ? customAmount : amount} ETH
+              <Button onClick={handleTip} className="w-full" disabled={status === "loading"}>
+                {status === "loading" ? "Sending..." : `Send Tip ${customAmount || amount} ETH`}
               </Button>
             </DialogFooter>
           )
