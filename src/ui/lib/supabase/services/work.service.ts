@@ -1,4 +1,4 @@
-import { supabase } from '../client';
+import { supabase, supabaseAdmin } from '../client';
 import type { Work } from '../client';
 
 /**
@@ -83,6 +83,7 @@ export async function getDerivativeWorks(parentWorkId: number): Promise<Work[]> 
 
 /**
  * 创建新作品
+ * 使用 supabaseAdmin 以绕过 RLS 限制
  */
 export async function createWork(workData: {
   workId: number; // 从合约获取
@@ -100,7 +101,7 @@ export async function createWork(workData: {
   isRemix: boolean;
 }): Promise<Work> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('works')
       .insert({
         work_id: workData.workId,
