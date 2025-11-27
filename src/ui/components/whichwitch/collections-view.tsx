@@ -60,6 +60,8 @@ export function CollectionsView({
   // 转换数据库收藏为组件需要的格式
   const collectedWorks = collections.map((c: any) => {
     const work = c.work_details || c.works; // 兼容旧数据
+    const status = authStatuses[work.work_id] || 'none';
+    
     return {
       id: work.work_id,
       title: work.title,
@@ -74,7 +76,7 @@ export function CollectionsView({
       licenseFee: work.license_fee || '0.05',
       savedAt: new Date(c.saved_at).toLocaleString(),
       savedFolder: c.folders.name,
-      collectionStatus: authStatuses[work.work_id] || 'none',
+      collectionStatus: status,
     };
   })
 

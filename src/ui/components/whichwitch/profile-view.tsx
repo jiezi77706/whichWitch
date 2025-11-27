@@ -211,9 +211,10 @@ function WorkDetailTrigger({ work }: { work: any }) {
 
   return (
     <>
-      <div onClick={() => setOpen(true)} className="cursor-pointer">
-        <WorkCard work={work} />
-      </div>
+      <WorkCard 
+        work={work} 
+        onClick={() => setOpen(true)}
+      />
       <WorkDetailDialog work={work} open={open} onOpenChange={setOpen} />
     </>
   )
