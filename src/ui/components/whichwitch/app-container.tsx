@@ -55,13 +55,13 @@ export function WhichwitchApp() {
       {/* Header */}
       <header className="border-b border-border/40 px-6 py-4 sticky top-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="relative h-12 w-12 overflow-hidden rounded-md">
+          <div className="relative h-16 w-16 overflow-hidden rounded-md flex items-center justify-center">
             <Image
               src="/logos/whichwitch-logo.jpg"
               alt="Whichwitch Logo"
-              width={48}
-              height={48}
-              className="h-full w-full object-cover"
+              width={64}
+              height={64}
+              className="h-full w-full object-contain"
             />
           </div>
           <span className="font-bold text-xl tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500 hidden sm:block">

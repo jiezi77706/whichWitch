@@ -33,7 +33,8 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
 
   // 当钱包连接成功后，检查用户状态
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && !userLoading) {
+      // 只有在用户数据加载完成后才进行判断
       if (user) {
         // 老用户，直接登录
         onLogin({
@@ -47,7 +48,7 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
         setStep("profile")
       }
     }
-  }, [isConnected, address, user, isNewUser, step])
+  }, [isConnected, address, user, isNewUser, step, userLoading])
 
   const handleConnect = () => {
     // 使用第一个可用的连接器（通常是 MetaMask）
@@ -108,16 +109,16 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center space-y-4">
-          <div className="w-20 h-20 mx-auto relative rounded-2xl overflow-hidden shadow-[0_0_40px_-10px_var(--primary)]">
-            <Image src="/logos/whichwitch-logo.jpg" alt="Whichwitch Logo" fill className="object-cover" />
+          <div className="w-60 h-60 mx-auto relative">
+            <Image src="/logos/whichwitch-logo.jpg" alt="Whichwitch Logo" fill className="object-contain" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tighter">Whichwitch</h1>
+          <h1 className="text-5xl font-bold tracking-tighter text-[#5DADE2]">Whichwitch</h1>
           <p className="text-muted-foreground">
             Establish on-chain identity for your craft. Trace inspiration, protect rights, and get rewarded.
           </p>
         </div>
 
-        {step === "welcome" ? (
+        {step === "welcome" || userLoading ? (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="grid gap-4">
               <Button
@@ -131,7 +132,7 @@ export function AuthView({ onLogin }: { onLogin: (user: UserProfile) => void }) 
                 ) : (
                   <Wallet className="mr-2 h-5 w-5" />
                 )}
-                {userLoading ? 'Loading...' : isConnected ? 'Wallet Connected' : 'Connect Wallet'}
+                {userLoading ? 'Loading user data...' : isConnected ? 'Wallet Connected' : 'Connect Wallet'}
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </Button>
               {isConnected && address && (
