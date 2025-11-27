@@ -1,5 +1,5 @@
-# WhichWitch 🎨
-
+# WhichWitch 🧙‍♀️
+> Let creation be a tree that can see its own growth.🌱
 > A decentralized creative works platform built on blockchain technology, enabling creators to share, remix, and monetize their work with transparent copyright protection.
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
@@ -85,27 +85,6 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your credentials:
-```env
-# Smart Contract Addresses (Sepolia Testnet)
-NEXT_PUBLIC_CONTRACT_ADDRESS_CREATION=0xB9365df57B3250cC6e4B9b3efDeE9871020b68cF
-NEXT_PUBLIC_CONTRACT_ADDRESS_PAYMENT=0xE9e700df0e448F5DebE55A8B153aebf8988db0c8
-NEXT_PUBLIC_CONTRACT_ADDRESS_AUTHORIZATION=0x182AF7db7B2928455900595506D94b26E173aeA1
-
-# Network Configuration
-NEXT_PUBLIC_CHAIN_ID=11155111
-NEXT_PUBLIC_NETWORK_NAME=sepolia
-NEXT_PUBLIC_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# Pinata IPFS
-PINATA_API_KEY=your_api_key
-PINATA_API_SECRET=your_api_secret
-PINATA_JWT=your_jwt_token
-```
 
 4. **Initialize database**
 
@@ -252,15 +231,7 @@ npm run type-check   # TypeScript type checking
 npm test
 ```
 
-## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## 📝 License
 
@@ -287,10 +258,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Smart contract integration
 - [x] User authentication
 - [x] Collection management
-- [ ] Social features (follow, comment, like)
-- [ ] Marketplace (buy/sell works)
-- [ ] Advanced search and filtering
-- [ ] Creator dashboard and analytics
 - [ ] Mobile app (React Native)
 
 ---
