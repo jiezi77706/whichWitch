@@ -111,6 +111,8 @@ export function UploadView({ user, isRemix = false, onAddWork }: {
         description: formData.story,
         imageUrl: imageUrl,
         metadataUri: metadataUri,
+        material: materialTags,
+        tags: tags,
         allowRemix: allowRemix,
         licenseFee: formData.licenseFee,
         isRemix: mode === "remix",

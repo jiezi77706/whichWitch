@@ -21,7 +21,7 @@ export function SquareView({
   const { works, loading, error } = useWorks()
   const { user } = useUser()
 
-  const COMMON_FILTERS = ["Digital", "Wood", "Clay", "Glass", "Cyberpunk", "Minimalist"]
+  const COMMON_FILTERS = ["Digital", "Wood", "Clay", "Glass", "Metal", "Cyberpunk", "Minimalist", "Nature", "Abstract"]
 
   const handleFilterClick = (tag: string) => {
     setSearch(search === tag ? "" : tag)
