@@ -5,7 +5,7 @@ import type { UserProfile } from "./app-container"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { WorkCard } from "./work-card"
-import { Settings, Share2, Wallet, ArrowUpRight } from "lucide-react"
+import { Settings, Share2, Wallet, ArrowUpRight, RefreshCw } from "lucide-react"
 import { WorkDetailDialog } from "./work-card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -131,7 +131,16 @@ export function ProfileView({ user }: { user: UserProfile }) {
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Balance</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Balance</p>
+                      <button
+                        onClick={loadBalance}
+                        disabled={loadingBalance}
+                        className="text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${loadingBalance ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
                     <p className="text-xl font-mono font-bold">
                       {loadingBalance ? "Loading..." : `${parseFloat(balance).toFixed(4)} ETH`}
                     </p>
@@ -141,9 +150,9 @@ export function ProfileView({ user }: { user: UserProfile }) {
                   size="sm" 
                   className="gap-2 h-8 shrink-0"
                   onClick={handleWithdraw}
-                  disabled={loadingBalance || parseFloat(balance) === 0}
+                  disabled={loadingBalance || parseFloat(balance) === 0 || withdrawing}
                 >
-                  <ArrowUpRight className="w-4 h-4" /> Withdraw
+                  <ArrowUpRight className="w-4 h-4" /> {withdrawing ? "Processing..." : "Withdraw"}
                 </Button>
               </div>
 

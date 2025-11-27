@@ -66,9 +66,10 @@ export function UploadView({
   const SUGGESTED_MATERIALS = ["Digital", "Wood", "Clay", "Glass", "Metal"]
 
   // Get approved works from collections
-  const approvedWorks = collections?.filter(c => 
-    authStatuses[c.work_id] === 'approved' && c.work?.allowRemix
-  ) || []
+  const approvedWorks = collections?.filter(c => {
+    const work = c.work_details || c.works || c.work
+    return authStatuses[c.work_id] === 'approved' && work?.allow_remix
+  }) || []
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -256,67 +257,74 @@ export function UploadView({
           </div>
           
           {/* Selected Parent Work Display */}
-          {selectedParentWork && approvedWorks.find(w => w.work_id === selectedParentWork) && (
-            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <p className="text-xs font-medium text-primary mb-2">Selected Parent Work:</p>
-              <div className="flex gap-3 items-center">
-                <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                  <img 
-                    src={approvedWorks.find(w => w.work_id === selectedParentWork)?.work?.imageUrl || "/placeholder.svg"} 
-                    className="w-full h-full object-cover" 
-                    alt="Parent work"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">
-                    {approvedWorks.find(w => w.work_id === selectedParentWork)?.work?.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    by {approvedWorks.find(w => w.work_id === selectedParentWork)?.work?.creator?.slice(0, 6)}...
-                    {approvedWorks.find(w => w.work_id === selectedParentWork)?.work?.creator?.slice(-4)}
-                  </p>
-                  <div className="flex gap-1 mt-1">
-                    {approvedWorks.find(w => w.work_id === selectedParentWork)?.work?.material?.slice(0, 2).map((mat: string) => (
-                      <span key={mat} className="text-[10px] px-1.5 py-0.5 bg-background rounded">
-                        {mat}
-                      </span>
-                    ))}
+          {selectedParentWork && approvedWorks.find(w => w.work_id === selectedParentWork) && (() => {
+            const selectedCollection = approvedWorks.find(w => w.work_id === selectedParentWork)
+            const work = selectedCollection?.work_details || selectedCollection?.works || selectedCollection?.work
+            return (
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-xs font-medium text-primary mb-2">Selected Parent Work:</p>
+                <div className="flex gap-3 items-center">
+                  <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                    <img 
+                      src={work?.image_url || "/placeholder.svg"} 
+                      className="w-full h-full object-cover" 
+                      alt="Parent work"
+                    />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {work?.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      by {work?.creator_address?.slice(0, 6)}...
+                      {work?.creator_address?.slice(-4)}
+                    </p>
+                    <div className="flex gap-1 mt-1">
+                      {work?.material?.slice(0, 2).map((mat: string) => (
+                        <span key={mat} className="text-[10px] px-1.5 py-0.5 bg-background rounded">
+                          {mat}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedParentWork(null)}
+                    className="flex-shrink-0"
+                  >
+                    Change
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedParentWork(null)}
-                  className="flex-shrink-0"
-                >
-                  Change
-                </Button>
               </div>
-            </div>
-          )}
+            )
+          })()}
           
           {/* Parent Work Grid */}
           {!selectedParentWork && (
             <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
               {approvedWorks.length > 0 ? (
-                approvedWorks.map((collection) => (
-                  <div
-                    key={collection.work_id}
-                    onClick={() => setSelectedParentWork(collection.work_id)}
-                    className="relative cursor-pointer group rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all"
-                  >
-                    <div className="aspect-square bg-muted">
-                      <img src={collection.work?.imageUrl || "/placeholder.svg"} className="w-full h-full object-cover" />
+                approvedWorks.map((collection) => {
+                  const work = collection.work_details || collection.works || collection.work
+                  return (
+                    <div
+                      key={collection.work_id}
+                      onClick={() => setSelectedParentWork(collection.work_id)}
+                      className="relative cursor-pointer group rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all"
+                    >
+                      <div className="aspect-square bg-muted">
+                        <img src={work?.image_url || "/placeholder.svg"} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-2 bg-background/90">
+                        <p className="text-xs font-medium truncate">{work?.title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {work?.creator_address?.slice(0, 6)}...{work?.creator_address?.slice(-4)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-2 bg-background/90">
-                      <p className="text-xs font-medium truncate">{collection.work?.title}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {collection.work?.creator?.slice(0, 6)}...{collection.work?.creator?.slice(-4)}
-                      </p>
-                    </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <div className="col-span-2 py-8 text-center text-muted-foreground text-sm">
                   No approved works found in your collection. <br />
