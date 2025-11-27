@@ -5,6 +5,26 @@ export async function POST(request: NextRequest) {
   try {
     const workData = await request.json();
 
+    // 先检查 work_id 是否已存在
+    const { data: existingWork } = await supabaseAdmin
+      .from('works')
+      .select('work_id')
+      .eq('work_id', workData.workId)
+      .single();
+
+    if (existingWork) {
+      console.log('Work already exists:', workData.workId);
+      // 如果已存在，返回现有记录
+      const { data: existing } = await supabaseAdmin
+        .from('works')
+        .select('*')
+        .eq('work_id', workData.workId)
+        .single();
+      
+      return NextResponse.json(existing);
+    }
+
+    // 如果不存在，创建新记录
     const { data, error } = await supabaseAdmin
       .from('works')
       .insert({

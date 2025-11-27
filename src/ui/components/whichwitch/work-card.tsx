@@ -309,7 +309,10 @@ export function WorkCard({
                       size="sm"
                       variant="default"
                       className="h-8 bg-green-600 hover:bg-green-700 text-white border-none"
-                      onClick={() => setShowUploadModal(true)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (onRemix) onRemix()
+                      }}
                     >
                       <Upload className="w-3.5 h-3.5 mr-1.5" />
                       Upload Work
