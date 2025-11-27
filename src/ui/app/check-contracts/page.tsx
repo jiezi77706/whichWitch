@@ -7,6 +7,9 @@ import { config } from '@/lib/web3/config'
 import { CONTRACT_ADDRESSES } from '@/lib/web3/contracts/addresses'
 import { PaymentManagerABI, CreationManagerABI, AuthorizationManagerABI } from '@/lib/web3/contracts/abis'
 
+// Disable static generation for this test page
+export const dynamic = 'force-dynamic'
+
 export default function CheckContractsPage() {
   const [results, setResults] = useState<any>({})
   const [loading, setLoading] = useState(false)

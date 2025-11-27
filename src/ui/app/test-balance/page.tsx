@@ -8,6 +8,9 @@ import { getCreatorRevenue, processPayment } from '@/lib/web3/services/contract.
 import { formatEther, parseEther } from 'viem'
 import { CONTRACT_ADDRESSES } from '@/lib/web3/contracts/addresses'
 
+// Disable static generation for this test page
+export const dynamic = 'force-dynamic'
+
 export default function TestBalancePage() {
   const { address } = useAccount()
   const [balance, setBalance] = useState<string>('0')
