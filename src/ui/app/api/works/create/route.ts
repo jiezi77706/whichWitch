@@ -4,6 +4,17 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 export async function POST(request: NextRequest) {
   try {
     const workData = await request.json();
+    
+    console.log('📝 API received work data:', workData);
+
+    // 验证 workId 不能为 0
+    if (!workData.workId || workData.workId === 0) {
+      console.error('❌ Invalid workId:', workData.workId);
+      return NextResponse.json(
+        { error: 'Invalid workId: workId cannot be 0 or null' },
+        { status: 400 }
+      );
+    }
 
     // 先检查 work_id 是否已存在
     const { data: existingWork } = await supabaseAdmin
@@ -13,7 +24,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingWork) {
-      console.log('Work already exists:', workData.workId);
+      console.log('⚠️ Work already exists:', workData.workId);
       // 如果已存在，返回现有记录
       const { data: existing } = await supabaseAdmin
         .from('works')
