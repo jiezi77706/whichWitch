@@ -23,6 +23,12 @@ export async function registerOriginalWork(
   metadataURI: string
 ): Promise<{ hash: string; workId: bigint }> {
   try {
+    console.log('🎨 Registering original work:', {
+      licenseFee,
+      derivativeAllowed,
+      metadataURI
+    });
+    
     const hash = await writeContract(config, {
       address: CONTRACT_ADDRESSES.creation,
       abi: CreationManagerABI,
@@ -30,25 +36,58 @@ export async function registerOriginalWork(
       args: [parseEther(licenseFee), derivativeAllowed, metadataURI],
     });
 
-    // 等待交易确认
+    console.log('📤 Transaction sent:', hash);
     const receipt = await waitForTransactionReceipt(config, { hash });
+    console.log('📋 Receipt:', {
+      status: receipt.status,
+      logs: receipt.logs.length,
+      blockNumber: receipt.blockNumber
+    });
     
     // 从事件日志中提取 workId
-    // WorkRegistered 事件的第一个参数是 workId (indexed)
     let workId = 0n;
     
     if (receipt.logs && receipt.logs.length > 0) {
-      // workId 是第一个 indexed 参数，在 topics[1] 中
-      const log = receipt.logs[0];
-      if (log.topics && log.topics.length > 1) {
-        workId = BigInt(log.topics[1]);
+      console.log('🔍 Parsing logs to find WorkRegistered event...');
+      
+      // 查找来自 CreationManager 合约的日志
+      const creationManagerLogs = receipt.logs.filter(
+        log => log.address.toLowerCase() === CONTRACT_ADDRESSES.creation.toLowerCase()
+      );
+      
+      console.log(`Found ${creationManagerLogs.length} logs from CreationManager`);
+      
+      if (creationManagerLogs.length > 0) {
+        const log = creationManagerLogs[0];
+        console.log('📝 Log topics:', log.topics);
+        
+        // workId 是第一个 indexed 参数，在 topics[1] 中
+        if (log.topics && log.topics.length > 1) {
+          workId = BigInt(log.topics[1]);
+          console.log('✅ Extracted workId from topics[1]:', workId.toString());
+        } else {
+          console.error('❌ No topics found in log');
+        }
+      } else {
+        console.error('❌ No logs from CreationManager contract');
+        console.log('All logs:', receipt.logs.map(l => ({
+          address: l.address,
+          topics: l.topics
+        })));
       }
+    } else {
+      console.error('❌ No logs in receipt');
     }
     
-    console.log('Work registered with ID:', workId.toString());
+    if (workId === 0n) {
+      console.error('❌ WARNING: workId is 0! This will cause database issues.');
+      throw new Error('Failed to extract workId from transaction receipt');
+    }
+    
+    console.log('✅ Work registered with ID:', workId.toString());
     return { hash, workId };
   } catch (error) {
-    console.error('Error registering original work:', error);
+    console.error('❌ Error registering original work:', error);
     throw error;
   }
 }
@@ -63,6 +102,13 @@ export async function registerDerivativeWork(
   metadataURI: string
 ): Promise<{ hash: string; workId: bigint }> {
   try {
+    console.log('🎨 Registering derivative work:', {
+      parentId: parentId.toString(),
+      licenseFee,
+      derivativeAllowed,
+      metadataURI
+    });
+    
     const hash = await writeContract(config, {
       address: CONTRACT_ADDRESSES.creation,
       abi: CreationManagerABI,
@@ -70,23 +116,58 @@ export async function registerDerivativeWork(
       args: [parentId, parseEther(licenseFee), derivativeAllowed, metadataURI],
     });
 
+    console.log('📤 Transaction sent:', hash);
     const receipt = await waitForTransactionReceipt(config, { hash });
+    console.log('📋 Receipt:', {
+      status: receipt.status,
+      logs: receipt.logs.length,
+      blockNumber: receipt.blockNumber
+    });
     
     // 从事件日志中提取 workId
     let workId = 0n;
     
     if (receipt.logs && receipt.logs.length > 0) {
-      // workId 是第一个 indexed 参数，在 topics[1] 中
-      const log = receipt.logs[0];
-      if (log.topics && log.topics.length > 1) {
-        workId = BigInt(log.topics[1]);
+      console.log('🔍 Parsing logs to find WorkRegistered event...');
+      
+      // 查找来自 CreationManager 合约的日志
+      const creationManagerLogs = receipt.logs.filter(
+        log => log.address.toLowerCase() === CONTRACT_ADDRESSES.creation.toLowerCase()
+      );
+      
+      console.log(`Found ${creationManagerLogs.length} logs from CreationManager`);
+      
+      if (creationManagerLogs.length > 0) {
+        const log = creationManagerLogs[0];
+        console.log('📝 Log topics:', log.topics);
+        
+        // workId 是第一个 indexed 参数，在 topics[1] 中
+        if (log.topics && log.topics.length > 1) {
+          workId = BigInt(log.topics[1]);
+          console.log('✅ Extracted workId from topics[1]:', workId.toString());
+        } else {
+          console.error('❌ No topics found in log');
+        }
+      } else {
+        console.error('❌ No logs from CreationManager contract');
+        console.log('All logs:', receipt.logs.map(l => ({
+          address: l.address,
+          topics: l.topics
+        })));
       }
+    } else {
+      console.error('❌ No logs in receipt');
     }
     
-    console.log('Derivative work registered with ID:', workId.toString());
+    if (workId === 0n) {
+      console.error('❌ WARNING: workId is 0! This will cause database issues.');
+      throw new Error('Failed to extract workId from transaction receipt');
+    }
+    
+    console.log('✅ Derivative work registered with ID:', workId.toString());
     return { hash, workId };
   } catch (error) {
-    console.error('Error registering derivative work:', error);
+    console.error('❌ Error registering derivative work:', error);
     throw error;
   }
 }
