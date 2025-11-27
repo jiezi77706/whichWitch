@@ -76,23 +76,12 @@ contract AuthorizationManager {
         authorizations[workId][msg.sender] = true;
         userAuthorizations[msg.sender].push(workId);
 
-        // Get creator chain for revenue distribution
-        (bool chainSuccess, bytes memory chainData) =
-            creationManager.call(abi.encodeWithSignature("getCreatorChain(uint256)", workId));
+        // Get ancestors for revenue distribution (excludes the direct creator)
+        (bool ancestorsSuccess, bytes memory ancestorsData) =
+            creationManager.call(abi.encodeWithSignature("getAncestors(uint256)", workId));
 
-        require(chainSuccess, "Failed to get creator chain");
-        address[] memory creatorChain = abi.decode(chainData, (address[]));
-
-        // Prepare ancestors array (all except the direct creator)
-        address[] memory ancestors;
-        if (creatorChain.length > 1) {
-            ancestors = new address[](creatorChain.length - 1);
-            for (uint256 i = 0; i < creatorChain.length - 1; i++) {
-                ancestors[i] = creatorChain[i];
-            }
-        } else {
-            ancestors = new address[](0);
-        }
+        require(ancestorsSuccess, "Failed to get ancestors");
+        address[] memory ancestors = abi.decode(ancestorsData, (address[]));
 
         // Forward payment to PaymentManager for distribution
         (bool paymentSuccess,) = paymentManager.call{value: msg.value}(

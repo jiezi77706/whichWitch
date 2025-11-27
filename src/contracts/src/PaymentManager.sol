@@ -120,6 +120,34 @@ contract PaymentManager is ReentrancyGuard {
     }
 
     /**
+     * @notice Process payment for a work (Tip with work ID tracking)
+     * @dev Gets creator from CreationManager and tips them
+     * @param workId The work ID to tip
+     */
+    function processPayment(uint256 workId) external payable {
+        if (msg.value == 0) revert ZeroAmount();
+        
+        // Get work creator from CreationManager
+        (bool success, bytes memory data) = creationManager.call(
+            abi.encodeWithSignature("getWork(uint256)", workId)
+        );
+        
+        require(success, "Failed to get work");
+        
+        // Decode the Work struct to get creator
+        (, address creator, , , , , bool exists) = abi.decode(
+            data, 
+            (uint256, address, uint256, uint256, uint256, bool, bool)
+        );
+        
+        require(exists, "Work does not exist");
+        
+        balances[creator] += msg.value;
+        
+        emit TipReceived(msg.sender, creator, msg.value, block.timestamp);
+    }
+
+    /**
      * @notice Distributes revenue from license fees across the creation chain
      * @dev Called by AuthorizationManager when a license fee is paid
      * Distribution: 40% direct creator, 40% original creator, 20% middle ancestors
@@ -140,44 +168,71 @@ contract PaymentManager is ReentrancyGuard {
         if (msg.value == 0) revert ZeroAmount();
         
         uint256 totalAmount = msg.value;
+        uint256 distributedAmount = 0;
         
         // Direct creator gets 40%
         uint256 directShare = (totalAmount * DIRECT_CREATOR_SHARE) / PERCENTAGE_BASE;
         balances[directCreator] += directShare;
+        distributedAmount += directShare;
         
         // Prepare arrays for event emission
-        address[] memory recipients = new address[](ancestors.length + 1);
-        uint256[] memory amounts = new uint256[](ancestors.length + 1);
-        
-        recipients[0] = directCreator;
-        amounts[0] = directShare;
+        address[] memory recipients;
+        uint256[] memory amounts;
         
         // Distribute to ancestors
-        if (ancestors.length > 0) {
-            uint256 originalShare = (totalAmount * ORIGINAL_CREATOR_SHARE) / PERCENTAGE_BASE;
+        if (ancestors.length == 0) {
+            // No ancestors: direct creator gets everything
+            recipients = new address[](1);
+            amounts = new uint256[](1);
+            recipients[0] = directCreator;
+            amounts[0] = directShare;
+        } else if (ancestors.length == 1) {
+            // Only original creator: gets 40% + 20% = 60%
+            recipients = new address[](2);
+            amounts = new uint256[](2);
             
-            if (ancestors.length == 1) {
-                // Only 2 people: original gets 40% + 20% = 60%
-                uint256 totalOriginalShare = originalShare + (totalAmount * MIDDLE_ANCESTORS_POOL) / PERCENTAGE_BASE;
-                balances[ancestors[0]] += totalOriginalShare;
-                recipients[1] = ancestors[0];
-                amounts[1] = totalOriginalShare;
-            } else {
-                // Multiple ancestors: original gets 40%, middle split 20%
-                balances[ancestors[0]] += originalShare;
-                recipients[1] = ancestors[0];
-                amounts[1] = originalShare;
-                
-                uint256 middlePool = (totalAmount * MIDDLE_ANCESTORS_POOL) / PERCENTAGE_BASE;
-                uint256 perMiddle = middlePool / (ancestors.length - 1);
-                uint256 remainder = middlePool % (ancestors.length - 1);
-                
-                for (uint256 i = 1; i < ancestors.length; i++) {
-                    uint256 share = perMiddle + (i == 1 ? remainder : 0);
-                    balances[ancestors[i]] += share;
-                    recipients[i + 1] = ancestors[i];
-                    amounts[i + 1] = share;
+            uint256 originalShare = (totalAmount * ORIGINAL_CREATOR_SHARE) / PERCENTAGE_BASE;
+            uint256 middlePool = (totalAmount * MIDDLE_ANCESTORS_POOL) / PERCENTAGE_BASE;
+            uint256 totalOriginalShare = originalShare + middlePool;
+            
+            balances[ancestors[0]] += totalOriginalShare;
+            distributedAmount += totalOriginalShare;
+            
+            recipients[0] = directCreator;
+            amounts[0] = directShare;
+            recipients[1] = ancestors[0];
+            amounts[1] = totalOriginalShare;
+        } else {
+            // Multiple ancestors: original gets 40%, middle ancestors split 20%
+            recipients = new address[](ancestors.length + 1);
+            amounts = new uint256[](ancestors.length + 1);
+            
+            recipients[0] = directCreator;
+            amounts[0] = directShare;
+            
+            // Original creator gets 40%
+            uint256 originalShare = (totalAmount * ORIGINAL_CREATOR_SHARE) / PERCENTAGE_BASE;
+            balances[ancestors[0]] += originalShare;
+            distributedAmount += originalShare;
+            recipients[1] = ancestors[0];
+            amounts[1] = originalShare;
+            
+            // Middle ancestors split 20%
+            uint256 middlePool = (totalAmount * MIDDLE_ANCESTORS_POOL) / PERCENTAGE_BASE;
+            uint256 middleCount = ancestors.length - 1;
+            uint256 perMiddle = middlePool / middleCount;
+            uint256 remainder = middlePool - (perMiddle * middleCount);
+            
+            for (uint256 i = 1; i < ancestors.length; i++) {
+                uint256 share = perMiddle;
+                // Give remainder to first middle ancestor
+                if (i == 1 && remainder > 0) {
+                    share += remainder;
                 }
+                balances[ancestors[i]] += share;
+                distributedAmount += share;
+                recipients[i + 1] = ancestors[i];
+                amounts[i + 1] = share;
             }
         }
         

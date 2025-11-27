@@ -88,27 +88,53 @@ export const PaymentManagerABI = [
   },
   {
     type: 'function',
-    name: 'calculateDistribution',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'workId', type: 'uint256' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    outputs: [
-      { type: 'address[]' },
-      { type: 'uint256[]' }
-    ]
+    name: 'tipCreator',
+    stateMutability: 'payable',
+    inputs: [{ name: 'creator', type: 'address' }],
+    outputs: []
   },
   {
     type: 'function',
-    name: 'getTotalRevenue',
+    name: 'distributeRevenue',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'workId', type: 'uint256' },
+      { name: 'directCreator', type: 'address' },
+      { name: 'ancestors', type: 'address[]' }
+    ],
+    outputs: []
+  },
+  {
+    type: 'function',
+    name: 'withdraw',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: []
+  },
+  {
+    type: 'function',
+    name: 'withdrawPlatformFees',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: []
+  },
+  {
+    type: 'function',
+    name: 'getBalance',
     stateMutability: 'view',
-    inputs: [{ name: 'workId', type: 'uint256' }],
+    inputs: [{ name: 'creator', type: 'address' }],
     outputs: [{ type: 'uint256' }]
   },
   {
     type: 'function',
     name: 'getCreatorRevenue',
+    stateMutability: 'view',
+    inputs: [{ name: 'creator', type: 'address' }],
+    outputs: [{ type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'balances',
     stateMutability: 'view',
     inputs: [{ name: 'creator', type: 'address' }],
     outputs: [{ type: 'uint256' }]

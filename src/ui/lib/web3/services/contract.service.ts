@@ -259,6 +259,8 @@ export async function getAuthorizationTimestamp(
 
 /**
  * 处理支付（Tip 功能）
+ * @param workId 作品 ID
+ * @param amount ETH 金额
  */
 export async function processPayment(
   workId: bigint,
@@ -277,6 +279,32 @@ export async function processPayment(
     return hash;
   } catch (error) {
     console.error('Error processing payment:', error);
+    throw error;
+  }
+}
+
+/**
+ * 直接打赏创作者
+ * @param creatorAddress 创作者地址
+ * @param amount ETH 金额
+ */
+export async function tipCreator(
+  creatorAddress: string,
+  amount: string
+): Promise<string> {
+  try {
+    const hash = await writeContract(config, {
+      address: CONTRACT_ADDRESSES.payment,
+      abi: PaymentManagerABI,
+      functionName: 'tipCreator',
+      args: [creatorAddress as `0x${string}`],
+      value: parseEther(amount),
+    });
+
+    await waitForTransactionReceipt(config, { hash });
+    return hash;
+  } catch (error) {
+    console.error('Error tipping creator:', error);
     throw error;
   }
 }
@@ -350,7 +378,7 @@ export async function withdrawRevenue(): Promise<string> {
     const hash = await writeContract(config, {
       address: CONTRACT_ADDRESSES.payment,
       abi: PaymentManagerABI,
-      functionName: 'withdrawRevenue',
+      functionName: 'withdraw',
       args: [],
     });
 
