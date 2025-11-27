@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { processPayment } from "@/lib/web3/services/contract.service"
+import { toggleLike } from "@/lib/supabase/services/like.service"
+import { useAccount } from "wagmi"
 
 export function WorkCard({
   work,
@@ -32,6 +34,7 @@ export function WorkCard({
   onCollect,
   folders = [],
   onCreateFolder,
+  initialLiked = false,
 }: {
   work: any
   isRemixable?: boolean
@@ -44,13 +47,35 @@ export function WorkCard({
   onCollect?: (folder: string) => void
   folders?: string[]
   onCreateFolder?: (name: string) => void
+  initialLiked?: boolean
 }) {
-  const [liked, setLiked] = useState(false)
+  const { address } = useAccount()
+  const [liked, setLiked] = useState(initialLiked)
+  const [likeCount, setLikeCount] = useState(work.likes || 0)
   const [showCollectModal, setShowCollectModal] = useState(false)
   const [showTipModal, setShowTipModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedRemixer, setSelectedRemixer] = useState(0)
+  
+  useEffect(() => {
+    setLiked(initialLiked)
+  }, [initialLiked])
+  
+  const handleLike = async () => {
+    if (!address) {
+      console.error('User not connected')
+      return
+    }
+    
+    try {
+      const newLikedState = await toggleLike(work.id, address)
+      setLiked(newLikedState)
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1)
+    } catch (error) {
+      console.error('Failed to toggle like:', error)
+    }
+  }
 
   const canBeRemixed = work?.allowRemix !== false
   const isRemixActionAvailable = isRemixable && canBeRemixed
@@ -206,10 +231,10 @@ export function WorkCard({
                 variant="ghost"
                 size="sm"
                 className={`${liked ? "text-pink-500" : "text-muted-foreground hover:text-pink-500"} px-2 h-8 transition-colors`}
-                onClick={() => setLiked(!liked)}
+                onClick={handleLike}
               >
                 <Heart className={`w-4 h-4 mr-1.5 ${liked ? "fill-current" : ""}`} />
-                <span className="font-mono text-xs">{work.likes + (liked ? 1 : 0)}</span>
+                <span className="font-mono text-xs">{likeCount}</span>
               </Button>
               {allowTip && (
                 <Button
