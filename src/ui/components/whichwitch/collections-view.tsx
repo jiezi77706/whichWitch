@@ -98,7 +98,8 @@ export function CollectionsView({
       await createAuthorizationRequest(address, selectedWork.id)
       
       // 2. 调用合约支付
-      console.log("Processing payment...")
+      console.log("Processing payment with fee:", selectedWork.licenseFee)
+      console.log("Work ID:", selectedWork.id)
       const txHash = await requestAuthorization(
         BigInt(selectedWork.id),
         selectedWork.licenseFee || "0.05"
@@ -119,8 +120,22 @@ export function CollectionsView({
       // 刷新数据
       window.location.reload() // 简单的刷新，实际应该调用 refetch
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Authorization failed:", error)
+      
+      // 解析错误信息
+      let errorMessage = "Payment failed. Please try again.";
+      if (error.message) {
+        if (error.message.includes("insufficient funds")) {
+          errorMessage = "Insufficient funds. Please add more ETH to your wallet.";
+        } else if (error.message.includes("user rejected")) {
+          errorMessage = "Transaction rejected by user.";
+        } else if (error.message.includes("Internal JSON-RPC error")) {
+          errorMessage = "Contract error. Please check your wallet balance and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
       
       // 更新状态为 failed
       try {
@@ -129,13 +144,13 @@ export function CollectionsView({
           selectedWork.id,
           'failed',
           undefined,
-          error instanceof Error ? error.message : "Payment failed"
+          errorMessage
         )
       } catch (updateError) {
         console.error("Failed to update status:", updateError)
       }
       
-      setPaymentError(error instanceof Error ? error.message : "Payment failed. Please try again.")
+      setPaymentError(errorMessage)
     } finally {
       setPaymentLoading(false)
     }
