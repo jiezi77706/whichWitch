@@ -59,11 +59,15 @@ export function useCollections(userId?: number) {
   const addCollection = async (workId: number, folderId: number, note?: string) => {
     if (!userId) throw new Error('User not logged in');
 
+    console.log('📝 addCollection called:', { userId, workId, folderId, note })
+    
     try {
       await collectWork(userId, workId, folderId, note);
+      console.log('✅ collectWork succeeded, reloading collections...')
       await loadCollections();
+      console.log('✅ Collections reloaded')
     } catch (err) {
-      console.error('Error adding collection:', err);
+      console.error('❌ Error adding collection:', err);
       throw err;
     }
   };

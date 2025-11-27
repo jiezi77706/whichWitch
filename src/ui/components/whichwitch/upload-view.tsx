@@ -123,7 +123,7 @@ export function UploadView({
       console.log("Saving to database...")
       console.log("Work ID from contract:", contractResult.workId.toString())
       
-      const newWork = await createWork({
+      const workData = {
         workId: Number(contractResult.workId),
         creatorAddress: address,
         title: formData.title,
@@ -137,7 +137,17 @@ export function UploadView({
         licenseFee: formData.licenseFee,
         isRemix: mode === "remix",
         parentWorkId: mode === "remix" ? selectedParentWork : null,
+      }
+      
+      console.log('🔗 Creating work with data:', {
+        mode,
+        selectedParentWork,
+        isRemix: workData.isRemix,
+        parentWorkId: workData.parentWorkId,
+        workId: workData.workId,
       })
+      
+      const newWork = await createWork(workData)
       
       console.log("Work uploaded successfully!")
       setStatus("success")

@@ -28,22 +28,28 @@ export function SquareView({
   
   const handleCollect = async (workId: number, folderName: string) => {
     if (!user?.id) {
-      console.error('User not logged in')
+      console.error('❌ User not logged in')
       return
     }
+    
+    console.log('🔖 Collecting work:', { workId, folderName, userId: user.id })
     
     try {
       // 找到文件夹 ID
       const folder = folders.find(f => f.name === folderName)
       if (!folder) {
-        console.error('Folder not found:', folderName)
+        console.error('❌ Folder not found:', folderName)
+        console.log('Available folders:', folders)
         return
       }
       
+      console.log('📁 Found folder:', { id: folder.id, name: folder.name })
+      
       await addCollection(workId, folder.id)
+      console.log('✅ Work collected successfully')
       onCollect(workId, folderName) // 通知父组件
     } catch (error) {
-      console.error('Failed to collect work:', error)
+      console.error('❌ Failed to collect work:', error)
     }
   }
   
