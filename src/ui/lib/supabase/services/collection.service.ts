@@ -137,7 +137,7 @@ export async function uncollectWork(userId: number, workId: number): Promise<voi
 }
 
 /**
- * 获取用户的所有收藏（带作品信息）
+ * 获取用户的所有收藏（带作品信息和统计）
  */
 export async function getUserCollections(userId: number) {
   try {
@@ -145,7 +145,7 @@ export async function getUserCollections(userId: number) {
       .from('collections')
       .select(`
         *,
-        works (*),
+        work_details (*),
         folders (*)
       `)
       .eq('user_id', userId)

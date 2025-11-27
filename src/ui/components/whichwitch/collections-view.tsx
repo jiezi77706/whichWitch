@@ -56,22 +56,25 @@ export function CollectionsView({
   const folders = dbFolders.length > 0 ? dbFolders.map(f => f.name) : propFolders
 
   // 转换数据库收藏为组件需要的格式
-  const collectedWorks = collections.map((c: any) => ({
-    id: c.works.work_id,
-    title: c.works.title,
-    author: c.works.creator_address.slice(0, 6) + '...' + c.works.creator_address.slice(-4),
-    image: c.works.image_url,
-    tags: c.works.tags || [],
-    material: c.works.material?.join(', ') || '',
-    likes: 0,
-    allowRemix: c.works.allow_remix,
-    isRemix: c.works.is_remix,
-    story: c.works.story || c.works.description || '',
-    licenseFee: c.works.license_fee || '0.05',
-    savedAt: new Date(c.saved_at).toLocaleString(),
-    savedFolder: c.folders.name,
-    collectionStatus: authStatuses[c.works.work_id] || 'none',
-  }))
+  const collectedWorks = collections.map((c: any) => {
+    const work = c.work_details || c.works; // 兼容旧数据
+    return {
+      id: work.work_id,
+      title: work.title,
+      author: work.creator_address.slice(0, 6) + '...' + work.creator_address.slice(-4),
+      image: work.image_url,
+      tags: work.tags || [],
+      material: work.material?.join(', ') || '',
+      likes: work.like_count || 0,
+      allowRemix: work.allow_remix,
+      isRemix: work.is_remix,
+      story: work.story || work.description || '',
+      licenseFee: work.license_fee || '0.05',
+      savedAt: new Date(c.saved_at).toLocaleString(),
+      savedFolder: c.folders.name,
+      collectionStatus: authStatuses[work.work_id] || 'none',
+    };
+  })
 
   // Group works by folder
   const worksByFolder: Record<string, any[]> = {}

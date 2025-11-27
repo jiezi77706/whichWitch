@@ -65,14 +65,14 @@ export function SquareView({
   }
 
   // 转换数据库作品格式为组件需要的格式
-  const transformedWorks = works.map(work => ({
+  const transformedWorks = works.map((work: any) => ({
     id: work.work_id,
     title: work.title,
     author: work.creator_address.slice(0, 6) + '...' + work.creator_address.slice(-4),
     image: work.image_url,
     tags: work.tags || [],
     material: work.material?.join(', ') || '',
-    likes: 0, // TODO: 从统计表获取
+    likes: work.like_count || 0,
     allowRemix: work.allow_remix,
     isRemix: work.is_remix,
     story: work.story || work.description || '',

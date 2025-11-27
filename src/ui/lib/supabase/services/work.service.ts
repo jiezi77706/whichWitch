@@ -7,11 +7,12 @@ import type { Work } from '../client';
 
 /**
  * 获取所有作品（广场）
+ * 使用 work_details 视图获取包含统计信息的作品
  */
 export async function getAllWorks(limit = 100): Promise<Work[]> {
   try {
     const { data, error } = await supabase
-      .from('works')
+      .from('work_details')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -45,11 +46,12 @@ export async function getWorkById(workId: number): Promise<Work | null> {
 
 /**
  * 根据创作者地址获取作品
+ * 使用 work_details 视图获取包含统计信息的作品
  */
 export async function getWorksByCreator(creatorAddress: string): Promise<Work[]> {
   try {
     const { data, error } = await supabase
-      .from('works')
+      .from('work_details')
       .select('*')
       .eq('creator_address', creatorAddress.toLowerCase())
       .order('created_at', { ascending: false });
