@@ -267,6 +267,13 @@ export async function processPayment(
   amount: string
 ): Promise<string> {
   try {
+    console.log('Processing payment:', {
+      contract: CONTRACT_ADDRESSES.payment,
+      workId: workId.toString(),
+      amount,
+      value: parseEther(amount).toString()
+    });
+
     const hash = await writeContract(config, {
       address: CONTRACT_ADDRESSES.payment,
       abi: PaymentManagerABI,
@@ -275,7 +282,10 @@ export async function processPayment(
       value: parseEther(amount),
     });
 
-    await waitForTransactionReceipt(config, { hash });
+    console.log('Transaction sent, waiting for confirmation...', hash);
+    const receipt = await waitForTransactionReceipt(config, { hash });
+    console.log('Transaction confirmed!', receipt);
+    
     return hash;
   } catch (error) {
     console.error('Error processing payment:', error);
@@ -356,6 +366,8 @@ export async function getTotalRevenue(workId: bigint): Promise<bigint> {
  */
 export async function getCreatorRevenue(creatorAddress: string): Promise<bigint> {
   try {
+    console.log('Reading balance for:', creatorAddress, 'from contract:', CONTRACT_ADDRESSES.payment);
+    
     const balance = await readContract(config, {
       address: CONTRACT_ADDRESSES.payment,
       abi: PaymentManagerABI,
@@ -363,6 +375,7 @@ export async function getCreatorRevenue(creatorAddress: string): Promise<bigint>
       args: [creatorAddress as `0x${string}`],
     });
 
+    console.log('Balance read from contract:', balance.toString(), 'wei');
     return balance as bigint;
   } catch (error) {
     console.error('Error getting creator revenue:', error);
