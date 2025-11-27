@@ -438,11 +438,13 @@ function TipModal({ open, onOpenChange, work }: any) {
 
     try {
       console.log(`Sending tip of ${finalAmount} ETH to work ${work.id}`)
+      console.log('Work details:', work)
       
       // 调用合约处理支付
       const txHash = await processPayment(BigInt(work.id), finalAmount)
       
-      console.log("Tip sent successfully:", txHash)
+      console.log("Tip sent successfully! Transaction hash:", txHash)
+      console.log("The creator's balance should be updated. They can refresh in Profile tab.")
       setStatus("success")
       
       setTimeout(() => {
@@ -450,7 +452,9 @@ function TipModal({ open, onOpenChange, work }: any) {
         setStatus("idle")
         setCustomAmount("")
         setAmount("0.01")
-      }, 2000)
+        // 提示用户刷新余额
+        alert("Tip sent successfully! The creator can refresh their balance in the Profile tab to see the update.")
+      }, 1500)
       
     } catch (error) {
       console.error("Tip failed:", error)
