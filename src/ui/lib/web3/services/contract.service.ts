@@ -196,9 +196,16 @@ export async function requestAuthorization(
     console.log('Transaction hash:', hash);
     console.log('Waiting for confirmation...');
     
-    await waitForTransactionReceipt(config, { hash });
-    console.log('Transaction confirmed!');
+    const receipt = await waitForTransactionReceipt(config, { hash });
+    console.log('Transaction receipt:', receipt);
     
+    // 检查交易是否成功
+    if (receipt.status === 'reverted') {
+      console.error('❌ Transaction reverted!');
+      throw new Error('Transaction failed: The transaction was reverted. Please check if the contract is properly configured.');
+    }
+    
+    console.log('✅ Transaction confirmed!');
     return hash;
   } catch (error: any) {
     console.error('Error requesting authorization:', error);
@@ -284,8 +291,15 @@ export async function processPayment(
 
     console.log('Transaction sent, waiting for confirmation...', hash);
     const receipt = await waitForTransactionReceipt(config, { hash });
-    console.log('Transaction confirmed!', receipt);
+    console.log('Transaction receipt:', receipt);
     
+    // 检查交易是否成功
+    if (receipt.status === 'reverted') {
+      console.error('❌ Transaction reverted!');
+      throw new Error('Transaction failed: The transaction was reverted. This might be because the PaymentManager contract\'s creationManager address is not set.');
+    }
+    
+    console.log('✅ Transaction successful!');
     return hash;
   } catch (error) {
     console.error('Error processing payment:', error);

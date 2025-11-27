@@ -2,6 +2,20 @@
 export const CreationManagerABI = [
   {
     type: 'function',
+    name: 'authorizationManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
+  {
+    type: 'function',
+    name: 'paymentManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
+  {
+    type: 'function',
     name: 'registerOriginalWork',
     stateMutability: 'nonpayable',
     inputs: [
@@ -138,10 +152,45 @@ export const PaymentManagerABI = [
     stateMutability: 'view',
     inputs: [{ name: 'creator', type: 'address' }],
     outputs: [{ type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'creationManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
+  {
+    type: 'function',
+    name: 'authorizationManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
+  {
+    type: 'function',
+    name: 'platformWallet',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
   }
 ] as const;
 
 export const AuthorizationManagerABI = [
+  {
+    type: 'function',
+    name: 'creationManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
+  {
+    type: 'function',
+    name: 'paymentManager',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }]
+  },
   {
     type: 'function',
     name: 'requestAuthorization',
