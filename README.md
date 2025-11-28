@@ -3,11 +3,13 @@
 > *Let creation be a tree that can see its own growth.*
 
 **🌐 Live App**: [https://which-witch-v1-mnoigi2vi-whichwitch.vercel.app/](https://which-witch-v1-mnoigi2vi-whichwitch.vercel.app/)  
+*Fully deployed with smart contracts, database, MetaMask wallet integration, and IPFS storage. Try it now!*
+
 **📊 Presentation**: [View on Canva](https://www.canva.com/design/DAG5t6aAKIU/JLK99jHgZNk_ge5mS-qDsQ/view?utm_content=DAG5t6aAKIU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3a5cb0fa9a)
 
 ---
 
-## � Mvission
+## 🎯 Mission
 
 Build an on-chain creation platform for **recording**, **incentivizing**, and **tracing** every creation. Enable automatic authorization and revenue sharing for original works, safeguarding creators' income and fostering continuous creation and sharing.
 
@@ -22,14 +24,12 @@ Build an on-chain creation platform for **recording**, **incentivizing**, and **
 
 ### 💰 Automatic Revenue Distribution
 - Smart contract-based payment splitting
-- **40%** to direct creator
-- **40%** to original creator
-- **20%** to middle ancestors
 - Pull-based withdrawal pattern for gas efficiency
+- Platform fee: 10% on withdrawal
 
 ### 🎨 Creator-Friendly Workflow
 1. **Upload** - Register original artwork on-chain
-2. **Authorize** - Request permission to create derivatives
+2. **Authorize** - Request permission (pay for license)
 3. **Remix** - Create and register derivative works
 4. **Earn** - Automatic revenue sharing across creation chain
 5. **Withdraw** - Pull earnings anytime
@@ -48,20 +48,11 @@ Build an on-chain creation platform for **recording**, **incentivizing**, and **
 
 ### Smart Contracts
 
-#### CreationManager
-- Register original and derivative works
-- Store creation relationships
-- Track creator genealogy
+Three core contracts power the platform:
 
-#### AuthorizationManager
-- Handle authorization requests
-- Verify permissions
-- Trigger revenue distribution
-
-#### PaymentManager
-- Receive and distribute payments
-- Manage creator balances
-- Handle withdrawals with platform fee (10%)
+- **CreationManager** - Registers works and tracks creation relationships
+- **AuthorizationManager** - Handles authorization requests and verifies permissions
+- **PaymentManager** - Distributes payments and manages creator balances
 
 ### Contract Interaction Flow
 
@@ -99,19 +90,19 @@ User (Withdraw) → PaymentManager.withdraw()
 | **UI Design & Frontend** | Kekeke | Design interface, implement frontend |
 | **Contract Development** | Xiaoguai | Write contracts, manage blockchain integration |
 | **Database & Backend** | Jiajia | Setup database, provide APIs, implement data operations |
-| **Project Coordination** | Relax | Improve documentation, coordinate meetings, assist testing |
+| **Project Coordination** | Relax | Logo design, documentation, coordinate meetings, testing |
 
 ---
 
 ## 🚀 Roadmap
 
 ### V1.0 (December) - Foundation
-**Goal**: Complete "Create → Authorize → Remix → Revenue Split" workflow
+**Goal**: Complete "Create → Authorize → Remix → Revenue Split → Withdraw" workflow
 
 **Features**:
 - Upload works and tip functionality
 - Authorization request with automatic approval and status display
-- Revenue split (40%-60% or 40%-40%-20%)
+- Automatic revenue distribution across creation chain
 
 ### V2.0 (Ongoing) - Ecosystem Expansion
 **New Features**:
