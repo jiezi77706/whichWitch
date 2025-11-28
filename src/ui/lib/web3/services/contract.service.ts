@@ -6,7 +6,7 @@ import {
   PaymentManagerABI, 
   AuthorizationManagerABI 
 } from '../contracts/abis';
-import { parseEther } from 'viem';
+import { parseEther, formatEther } from 'viem';
 
 /**
  * 合约服务 - 处理所有智能合约交互
