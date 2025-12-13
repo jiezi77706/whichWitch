@@ -1,6 +1,6 @@
-import express from 'express';
-import { authMiddleware } from '../middleware/authMiddleware.js';
-import {
+const express = require('express');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const {
   proxyListNFT,
   proxyBuyNFT,
   proxyMakeOffer,
@@ -10,8 +10,8 @@ import {
   getListingInfo,
   getListingOffers,
   getUserListings
-} from '../services/marketplaceService.js';
-import { supabase } from '../utils/supabaseClient.js';
+} = require('../services/marketplaceService');
+const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
@@ -435,4 +435,4 @@ router.get('/search', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

@@ -110,16 +110,22 @@ async function main() {
     console.log("=".repeat(60));
     console.log("7. 部署 CyberGraphSync...");
     console.log("=".repeat(60));
+    
+    // CyberGraph 中继服务地址 - 在生产环境中应该是专门的中继服务
+    const cyberGraphRelay = deployer.address; // 临时使用部署者地址
+    console.log("CyberGraph Relay:", cyberGraphRelay);
+    
     const CyberGraphSync = await hre.ethers.getContractFactory("CyberGraphSync");
     const cyberGraphSync = await CyberGraphSync.deploy(
-      creationManagerAddress, 
-      deployer.address,       
-      deployer.address        
+      creationManagerAddress, // _creationManager
+      cyberGraphRelay,       // _cyberGraphRelay  
+      deployer.address       // initialOwner
     );
     await cyberGraphSync.waitForDeployment();
     const cyberGraphSyncAddress = await cyberGraphSync.getAddress();
     console.log("✅ CyberGraphSync 部署成功!");
     console.log("   地址:", cyberGraphSyncAddress);
+    console.log("   中继服务:", cyberGraphRelay);
     console.log();
 
     // 8. 配置合约关系

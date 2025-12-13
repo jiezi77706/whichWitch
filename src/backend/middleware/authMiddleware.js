@@ -1,10 +1,10 @@
-import { validateSession } from '../services/authService.js';
+const { validateSession } = require('../services/authService');
 
 /**
  * 认证中间件
  * 验证JWT token并设置req.user
  */
-export async function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     
@@ -41,7 +41,7 @@ export async function authMiddleware(req, res, next) {
  * 可选认证中间件
  * 如果有token则验证，没有token则继续
  */
-export async function optionalAuthMiddleware(req, res, next) {
+async function optionalAuthMiddleware(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     
@@ -62,3 +62,8 @@ export async function optionalAuthMiddleware(req, res, next) {
     next(); // 继续执行，不阻塞请求
   }
 }
+
+module.exports = {
+  authMiddleware,
+  optionalAuthMiddleware
+};

@@ -1,6 +1,6 @@
-import axios from 'axios';
+const axios = require('axios');
 
-const QWEN_API_KEY = process.env.QWEN_API_KEY || 'sk-b25e0402c60f4fe99dbb37eaa2659693';
+const QWEN_API_KEY = process.env.QWEN_API_KEY;
 const QWEN_BASE_URL = process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 /**
@@ -322,4 +322,13 @@ export async function assessTransactionRisk(transactionType, amount, userHistory
   ];
 
   return await callQwenAPI(messages, 0.2); // 低温度确保评估准确性
-}
+}module.exports = {
+  generateWalletCreationAdvice,
+  analyzeUserTransactionPattern,
+  generateSmartContractAdvice,
+  generateCreationAdvice,
+  generateWalletManagementAdvice,
+  handleUserQuery,
+  generateWelcomeMessage,
+  assessTransactionRisk
+};

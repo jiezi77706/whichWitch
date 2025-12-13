@@ -1,6 +1,6 @@
-import express from 'express';
-import { authMiddleware } from '../middleware/authMiddleware.js';
-import {
+const express = require('express');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const {
   proxyRegisterOriginalWork,
   proxyRegisterDerivativeWork,
   proxyRequestAuthorization,
@@ -8,7 +8,7 @@ import {
   proxyWithdraw,
   getUserBalance,
   estimateTransactionCost
-} from '../services/transactionService.js';
+} = require('../services/transactionService');
 
 const router = express.Router();
 
@@ -287,4 +287,4 @@ router.post('/estimate-cost', authMiddleware, async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

@@ -1,9 +1,15 @@
 node_modules
-.env
-.env.local
+.env*
+!.env.example
 coverage
 coverage.json
 typechain-types
+
+# 敏感配置文件
+*.key
+*.pem
+config/secrets.js
+config/production.js
 
 # Hardhat files
 cache

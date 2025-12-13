@@ -1,14 +1,14 @@
-import express from 'express';
-import { authMiddleware } from '../middleware/authMiddleware.js';
-import {
+const express = require('express');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const {
   syncContentToCyberGraph,
   batchSyncContent,
   updateCreatorProfileToCyberGraph,
   createSocialRelationToCyberGraph,
   getCyberGraphSocialGraph,
   searchCyberGraphContent
-} from '../services/cyberGraphService.js';
-import { supabase } from '../utils/supabaseClient.js';
+} = require('../services/cyberGraphService');
+const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
@@ -404,4 +404,4 @@ router.get('/trending', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

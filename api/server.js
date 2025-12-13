@@ -4,11 +4,9 @@ const cors = require('cors');
 const path = require('path');
 
 // Import routes
-const authRoutes = require('../src/backend/routes/auth');
-const marketplaceRoutes = require('../src/backend/routes/marketplace');
-const cybergraphRoutes = require('../src/backend/routes/cybergraph');
+const blockchainRoutes = require('../src/backend/routes/blockchain');
 const aiRoutes = require('../src/backend/routes/ai');
-const transactionRoutes = require('../src/backend/routes/transactions');
+const authRoutes = require('../src/backend/routes/auth');
 
 const app = express();
 
@@ -21,16 +19,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/cybergraph', cybergraphRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/transactions', transactionRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'whichWitch API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'whichWitch API is running',
+    timestamp: new Date().toISOString(),
+    network: 'ZetaChain Testnet',
+    contracts: {
+      CreationManager: process.env.CREATION_MANAGER_ADDRESS,
+      NFTManager: process.env.NFT_MANAGER_ADDRESS,
+      NFTMarketplace: process.env.MARKETPLACE_ADDRESS,
+      PaymentManager: process.env.PAYMENT_MANAGER_ADDRESS,
+      AuthorizationManager: process.env.AUTHORIZATION_MANAGER_ADDRESS,
+      ZetaChainBridge: process.env.ZETA_BRIDGE_ADDRESS
+    }
+  });
 });
+
+// Auth routes are now handled by authRoutes
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
 // 配置邮件发送器
 const transporter = nodemailer.createTransporter({
@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransporter({
 /**
  * 发送邮箱验证邮件
  */
-export async function sendVerificationEmail(email, token, aiAdvice = null) {
+async function sendVerificationEmail(email, token, aiAdvice = null) {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
   
   const mailOptions = {
@@ -81,7 +81,7 @@ export async function sendVerificationEmail(email, token, aiAdvice = null) {
 /**
  * 发送魔法链接登录邮件
  */
-export async function sendMagicLinkEmail(email, token) {
+async function sendMagicLinkEmail(email, token) {
   const magicLinkUrl = `${process.env.FRONTEND_URL}/magic-login?token=${token}`;
   
   const mailOptions = {
@@ -135,7 +135,7 @@ export async function sendMagicLinkEmail(email, token) {
 /**
  * 发送带AI建议的欢迎邮件
  */
-export async function sendWelcomeEmailWithAI(email, walletAddress, aiWelcomeMessage) {
+async function sendWelcomeEmailWithAI(email, walletAddress, aiWelcomeMessage) {
   const mailOptions = {
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: email,
@@ -202,7 +202,7 @@ export async function sendWelcomeEmailWithAI(email, walletAddress, aiWelcomeMess
 /**
  * 发送钱包信息邮件（可选）
  */
-export async function sendWalletInfoEmail(email, walletAddress) {
+async function sendWalletInfoEmail(email, walletAddress) {
   const mailOptions = {
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: email,
@@ -250,4 +250,10 @@ export async function sendWalletInfoEmail(email, walletAddress) {
     console.error('Failed to send wallet info email:', error);
     throw error;
   }
-}
+}m
+odule.exports = {
+  sendVerificationEmail,
+  sendMagicLinkEmail,
+  sendWelcomeEmailWithAI,
+  sendWalletInfoEmail
+};

@@ -265,7 +265,7 @@ sequenceDiagram
 
 ```javascript
 // AI服务配置
-const QWEN_API_KEY = 'sk-b25e0402c60f4fe99dbb37eaa2659693';
+const QWEN_API_KEY = process.env.QWEN_API_KEY;
 const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 // 调用示例
@@ -336,7 +336,7 @@ const response = await axios.post(`${QWEN_BASE_URL}/chat/completions`, {
 
 ```bash
 # AI配置
-QWEN_API_KEY=sk-b25e0402c60f4fe99dbb37eaa2659693
+QWEN_API_KEY=your_qwen_api_key_here
 QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 # 邮件配置
@@ -468,7 +468,7 @@ describe('Email Registration Flow', () => {
     expect(registerResult.status).toBe(200);
     
     // 2. 验证
-    const token = 'mock_verification_token';
+    const token = generateVerificationToken();
     const verifyResult = await request(app)
       .post('/api/auth/verify-email')
       .send({ token });

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 // 使用服务密钥创建客户端，绕过RLS
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -16,7 +16,12 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 // 用于前端的匿名客户端
-export const supabaseAnon = createClient(
+const supabaseAnon = createClient(
   supabaseUrl, 
   process.env.SUPABASE_ANON_KEY || supabaseServiceKey
 );
+
+module.exports = {
+  supabase,
+  supabaseAnon
+};

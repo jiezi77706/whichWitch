@@ -1,25 +1,26 @@
-import express from 'express';
-import { authMiddleware, optionalAuthMiddleware } from '../middleware/authMiddleware.js';
-import {
-  generateWalletCreationAdvice,
-  analyzeUserTransactionPattern,
-  generateSmartContractAdvice,
-  generateCreationAdvice,
+const express = require('express');
+const web3Service = require('../services/web3Service');
+const {
+  generateWorkDescription,
+  brainstormCreativeIdeas,
+  analyzeNFTMarket,
+  generateTradingAdvice,
+  explainWeb3Basics,
   generateWalletManagementAdvice,
-  handleUserQuery,
-  generateWelcomeMessage,
-  assessTransactionRisk
-} from '../services/aiService.js';
+  handleGeneralQuery,
+  getLatestMarketData,
+  getUserWalletData
+} = require('../services/aiAgentService');
 
 const router = express.Router();
 
 /**
- * AI助手 - 处理用户查询
+ * AI助手 - 通用查询处理
  * POST /api/ai/chat
  */
-router.post('/chat', optionalAuthMiddleware, async (req, res) => {
+router.post('/chat', async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, userContext = {} } = req.body;
 
     if (!query) {
       return res.status(400).json({
@@ -28,14 +29,7 @@ router.post('/chat', optionalAuthMiddleware, async (req, res) => {
       });
     }
 
-    const userContext = req.user ? {
-      userId: req.user.id,
-      walletAddress: req.user.walletAddress,
-      email: req.user.email,
-      loginType: req.user.loginType
-    } : {};
-
-    const result = await handleUserQuery(query, userContext);
+    const result = await handleGeneralQuery(query, userContext);
 
     if (result.success) {
       res.json({
@@ -59,26 +53,31 @@ router.post('/chat', optionalAuthMiddleware, async (req, res) => {
 });
 
 /**
- * AI助手 - 钱包创建建议
- * POST /api/ai/wallet-advice
+ * 创作助手 - 生成作品简介
+ * POST /api/ai/generate-description
  */
-router.post('/wallet-advice', async (req, res) => {
+router.post('/generate-description', async (req, res) => {
   try {
-    const { email, preferences } = req.body;
+    const { workTitle, workType, userInput, userProfile } = req.body;
 
-    if (!email) {
+    if (!workTitle) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required'
+        error: 'Work title is required'
       });
     }
 
-    const result = await generateWalletCreationAdvice(email, preferences || {});
+    const result = await generateWorkDescription(
+      workTitle,
+      workType || '原创作品',
+      userInput || '',
+      userProfile || {}
+    );
 
     if (result.success) {
       res.json({
         success: true,
-        advice: result.content,
+        description: result.content,
         usage: result.usage
       });
     } else {
@@ -88,7 +87,7 @@ router.post('/wallet-advice', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Wallet advice route error:', error);
+    console.error('Generate description route error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -97,29 +96,65 @@ router.post('/wallet-advice', async (req, res) => {
 });
 
 /**
- * AI助手 - 交易模式分析
- * POST /api/ai/analyze-transactions
+ * 创作助手 - 头脑风暴和创作建议
+ * POST /api/ai/brainstorm
  */
-router.post('/analyze-transactions', authMiddleware, async (req, res) => {
+router.post('/brainstorm', async (req, res) => {
   try {
-    const { transactionHistory } = req.body;
+    const { workTitle, currentDescription, creativeGoals } = req.body;
 
-    if (!transactionHistory) {
+    if (!workTitle) {
       return res.status(400).json({
         success: false,
-        error: 'Transaction history is required'
+        error: 'Work title is required'
       });
     }
 
-    const result = await analyzeUserTransactionPattern(
-      req.user.walletAddress,
-      transactionHistory
+    const result = await brainstormCreativeIdeas(
+      workTitle,
+      currentDescription || '',
+      creativeGoals || ''
     );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        ideas: result.content,
+        usage: result.usage
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Brainstorm route error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * 交易助手 - NFT 市场分析
+ * GET /api/ai/market-analysis
+ */
+router.get('/market-analysis', async (req, res) => {
+  try {
+    const { userPreferences } = req.query;
+    
+    const marketData = await getLatestMarketData();
+    const preferences = userPreferences ? JSON.parse(userPreferences) : {};
+
+    const result = await analyzeNFTMarket(marketData, preferences);
 
     if (result.success) {
       res.json({
         success: true,
         analysis: result.content,
+        marketData: marketData,
         usage: result.usage
       });
     } else {
@@ -129,7 +164,7 @@ router.post('/analyze-transactions', authMiddleware, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Transaction analysis route error:', error);
+    console.error('Market analysis route error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -138,36 +173,42 @@ router.post('/analyze-transactions', authMiddleware, async (req, res) => {
 });
 
 /**
- * AI助手 - 智能合约交互建议
- * POST /api/ai/contract-advice
+ * 交易助手 - 个性化交易建议
+ * POST /api/ai/trading-advice
  */
-router.post('/contract-advice', authMiddleware, async (req, res) => {
+router.post('/trading-advice', async (req, res) => {
   try {
-    const { contractFunction, parameters } = req.body;
+    const { walletAddress, userPreferences } = req.body;
 
-    if (!contractFunction) {
+    if (!walletAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Contract function is required'
+        error: 'Wallet address is required'
       });
     }
 
-    const userContext = {
-      userId: req.user.id,
-      walletAddress: req.user.walletAddress,
-      loginType: req.user.loginType
+    // 获取用户投资组合和交易历史
+    const walletData = await getUserWalletData(walletAddress);
+    const marketData = await getLatestMarketData();
+    
+    // 模拟交易历史（实际应该从数据库获取）
+    const transactionHistory = {
+      totalTransactions: walletData.worksCount,
+      averageAmount: walletData.totalValue / Math.max(walletData.worksCount, 1),
+      recentActivity: walletData.lastActivity
     };
 
-    const result = await generateSmartContractAdvice(
-      contractFunction,
-      parameters || {},
-      userContext
+    const result = await generateTradingAdvice(
+      walletData,
+      transactionHistory,
+      marketData
     );
 
     if (result.success) {
       res.json({
         success: true,
         advice: result.content,
+        walletData: walletData,
         usage: result.usage
       });
     } else {
@@ -177,7 +218,7 @@ router.post('/contract-advice', authMiddleware, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Contract advice route error:', error);
+    console.error('Trading advice route error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -186,37 +227,29 @@ router.post('/contract-advice', authMiddleware, async (req, res) => {
 });
 
 /**
- * AI助手 - 创作建议
- * POST /api/ai/creation-advice
+ * 钱包管理助手 - Web3 基础知识普及
+ * POST /api/ai/web3-education
  */
-router.post('/creation-advice', authMiddleware, async (req, res) => {
+router.post('/web3-education', async (req, res) => {
   try {
-    const { workType, parentWork } = req.body;
+    const { question, userLevel } = req.body;
 
-    if (!workType) {
+    if (!question) {
       return res.status(400).json({
         success: false,
-        error: 'Work type is required'
+        error: 'Question is required'
       });
     }
 
-    const userProfile = {
-      userId: req.user.id,
-      walletAddress: req.user.walletAddress,
-      email: req.user.email,
-      loginType: req.user.loginType
-    };
-
-    const result = await generateCreationAdvice(
-      workType,
-      parentWork || {},
-      userProfile
+    const result = await explainWeb3Basics(
+      question,
+      userLevel || 'beginner'
     );
 
     if (result.success) {
       res.json({
         success: true,
-        advice: result.content,
+        explanation: result.content,
         usage: result.usage
       });
     } else {
@@ -226,7 +259,7 @@ router.post('/creation-advice', authMiddleware, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Creation advice route error:', error);
+    console.error('Web3 education route error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -235,32 +268,32 @@ router.post('/creation-advice', authMiddleware, async (req, res) => {
 });
 
 /**
- * AI助手 - 钱包管理建议
- * GET /api/ai/wallet-management
+ * 钱包管理助手 - 个人财务管理建议
+ * POST /api/ai/wallet-management
  */
-router.get('/wallet-management', authMiddleware, async (req, res) => {
+router.post('/wallet-management', async (req, res) => {
   try {
-    if (req.user.loginType !== 'email') {
+    const { walletAddress, userGoals } = req.body;
+
+    if (!walletAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet management advice only available for email users'
+        error: 'Wallet address is required'
       });
     }
 
-    // 这里可以从数据库获取用户的实际余额和活跃度
-    const balance = '0.0'; // 实际应该从区块链查询
-    const activityLevel = 'medium'; // 实际应该从用户行为分析
+    const walletData = await getUserWalletData(walletAddress);
 
     const result = await generateWalletManagementAdvice(
-      req.user.walletAddress,
-      balance,
-      activityLevel
+      walletData,
+      userGoals || {}
     );
 
     if (result.success) {
       res.json({
         success: true,
         advice: result.content,
+        walletData: walletData,
         usage: result.usage
       });
     } else {
@@ -279,47 +312,19 @@ router.get('/wallet-management', authMiddleware, async (req, res) => {
 });
 
 /**
- * AI助手 - 交易风险评估
- * POST /api/ai/assess-risk
+ * 获取市场数据
+ * GET /api/ai/market-data
  */
-router.post('/assess-risk', authMiddleware, async (req, res) => {
+router.get('/market-data', async (req, res) => {
   try {
-    const { transactionType, amount } = req.body;
-
-    if (!transactionType || !amount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Transaction type and amount are required'
-      });
-    }
-
-    // 这里可以从数据库获取用户的历史交易记录
-    const userHistory = {
-      totalTransactions: 0,
-      averageAmount: '0',
-      lastTransactionDate: null
-    };
-
-    const result = await assessTransactionRisk(
-      transactionType,
-      amount,
-      userHistory
-    );
-
-    if (result.success) {
-      res.json({
-        success: true,
-        assessment: result.content,
-        usage: result.usage
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: result.error
-      });
-    }
+    const marketData = await getLatestMarketData();
+    
+    res.json({
+      success: true,
+      data: marketData
+    });
   } catch (error) {
-    console.error('Risk assessment route error:', error);
+    console.error('Market data route error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -327,46 +332,4 @@ router.post('/assess-risk', authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * AI助手 - 生成欢迎消息
- * POST /api/ai/welcome-message
- */
-router.post('/welcome-message', async (req, res) => {
-  try {
-    const { email, walletAddress, isNewUser } = req.body;
-
-    if (!email || !walletAddress) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email and wallet address are required'
-      });
-    }
-
-    const result = await generateWelcomeMessage(
-      email,
-      walletAddress,
-      isNewUser !== false
-    );
-
-    if (result.success) {
-      res.json({
-        success: true,
-        message: result.content,
-        usage: result.usage
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: result.error
-      });
-    }
-  } catch (error) {
-    console.error('Welcome message route error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
-  }
-});
-
-export default router;
+module.exports = router;

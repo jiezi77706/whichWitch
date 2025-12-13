@@ -1,10 +1,10 @@
-import { ethers } from 'ethers';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { supabase } from '../utils/supabaseClient.js';
-import { sendVerificationEmail, sendWelcomeEmailWithAI } from '../utils/emailService.js';
-import { generateWalletCreationAdvice, generateWelcomeMessage } from './aiService.js';
+const { ethers } = require('ethers');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { supabase } = require('../utils/supabaseClient');
+const { sendVerificationEmail, sendWelcomeEmailWithAI } = require('../utils/emailService');
+const { generateWalletCreationAdvice, generateWelcomeMessage } = require('./aiService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32);
@@ -69,7 +69,7 @@ function verifyJWT(token) {
 /**
  * 钱包登录
  */
-export async function walletLogin(walletAddress, signature, message) {
+async function walletLogin(walletAddress, signature, message) {
   try {
     // 验证签名
     const recoveredAddress = ethers.verifyMessage(message, signature);
@@ -136,7 +136,7 @@ export async function walletLogin(walletAddress, signature, message) {
 /**
  * 邮箱注册
  */
-export async function emailRegister(email) {
+async function emailRegister(email) {
   try {
     // 检查邮箱是否已存在
     const { data: existingUser } = await supabase
@@ -212,7 +212,7 @@ export async function emailRegister(email) {
 /**
  * 邮箱验证
  */
-export async function verifyEmail(token) {
+async function verifyEmail(token) {
   try {
     // 查找验证token
     const { data: tokenData, error: tokenError } = await supabase
@@ -279,7 +279,7 @@ export async function verifyEmail(token) {
 /**
  * 邮箱登录
  */
-export async function emailLogin(email, verificationCode) {
+async function emailLogin(email, verificationCode) {
   try {
     // 这里可以实现邮箱验证码登录
     // 或者使用魔法链接登录
@@ -331,7 +331,7 @@ export async function emailLogin(email, verificationCode) {
 /**
  * 获取用户的私钥（仅用于交易签名）
  */
-export async function getUserPrivateKey(userId) {
+async function getUserPrivateKey(userId) {
   try {
     const { data: user, error } = await supabase
       .from('users')
@@ -357,7 +357,7 @@ export async function getUserPrivateKey(userId) {
 /**
  * 验证会话token
  */
-export async function validateSession(token) {
+async function validateSession(token) {
   try {
     const decoded = verifyJWT(token);
     if (!decoded) {
@@ -394,7 +394,7 @@ export async function validateSession(token) {
 /**
  * 发送魔法链接登录邮件
  */
-export async function sendMagicLink(email) {
+async function sendMagicLink(email) {
   try {
     // 查找用户
     const { data: user, error } = await supabase
@@ -451,7 +451,7 @@ export async function sendMagicLink(email) {
 /**
  * 魔法链接登录
  */
-export async function magicLinkLogin(token) {
+async function magicLinkLogin(token) {
   try {
     // 查找魔法链接token
     const { data: tokenData, error: tokenError } = await supabase
@@ -503,4 +503,14 @@ export async function magicLinkLogin(token) {
       error: error.message
     };
   }
-}
+}mod
+ule.exports = {
+  walletLogin,
+  emailRegister,
+  verifyEmail,
+  emailLogin,
+  getUserPrivateKey,
+  validateSession,
+  sendMagicLink,
+  magicLinkLogin
+};
