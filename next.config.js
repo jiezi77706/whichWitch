@@ -7,7 +7,6 @@ const nextConfig = {
     NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID || '7001', // ZetaChain
   },
   webpack: (config, { isServer }) => {
-    // 只处理必要的模块替换
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -15,7 +14,19 @@ const nextConfig = {
         net: false,
         tls: false,
       };
+      
+      // 忽略 MetaMask SDK 的 React Native 依赖
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@react-native-async-storage/async-storage': false,
+      };
     }
+    
+    // 忽略构建警告
+    config.ignoreWarnings = [
+      /Module not found: Can't resolve '@react-native-async-storage\/async-storage'/,
+    ];
+    
     return config;
   },
   // 忽略构建警告

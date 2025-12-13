@@ -32,7 +32,7 @@ export default function AuthPage() {
   });
 
   // 处理邮箱注册
-  const handleEmailRegister = async (e) => {
+  const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -79,7 +79,7 @@ ${response.securityAdvice.securityTips.join('\n')}
   };
 
   // 处理邮箱登录
-  const handleEmailLogin = async (e) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -110,7 +110,7 @@ ${response.securityAdvice.securityTips.join('\n')}
   };
 
   // 处理钱包登录
-  const handleWalletLogin = async (e) => {
+  const handleWalletLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');

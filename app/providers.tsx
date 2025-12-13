@@ -2,7 +2,8 @@
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { sepolia } from 'wagmi/chains'
-import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider, connectorsForWallets } from '@rainbow-me/rainbowkit'
+import { walletConnectWallet, injectedWallet } from '@rainbow-me/rainbowkit/wallets'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '../contexts/AuthContext'
 import { AIProvider } from '../contexts/AIContext'
@@ -27,10 +28,26 @@ const zetaTestnet = {
   testnet: true,
 } as const
 
-// 创建简化的 wagmi 配置
-const wagmiConfig = getDefaultConfig({
-  appName: 'whichWitch',
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'default-project-id',
+// 自定义连接器配置，只包含需要的钱包
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Recommended',
+      wallets: [
+        injectedWallet,
+        walletConnectWallet,
+      ],
+    },
+  ],
+  {
+    appName: 'whichWitch',
+    projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'default-project-id',
+  }
+);
+
+// 创建 wagmi 配置
+const wagmiConfig = createConfig({
+  connectors,
   chains: [zetaTestnet, sepolia],
   transports: {
     [zetaTestnet.id]: http('https://zetachain-athens-evm.blockpi.network/v1/rpc/public'),
