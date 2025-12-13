@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useWeb3Context } from '../../src/contexts/Web3Context';
-import { blockchainAPI, systemAPI } from '../../src/utils/api';
+import { useWeb3Context } from '../../contexts/Web3Context';
+import { transactionAPI } from '../../lib/api';
 
 export default function TestWeb3Page() {
   const {

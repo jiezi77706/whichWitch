@@ -1,193 +1,75 @@
-# WhichWitch
+# WhichWitch - Web3 创作平台
 
-> *Let creation be a tree that can see its own growth.*
+一个基于区块链的创作平台，支持 NFT 创作、衍生作品管理和 AI 助手功能。
 
-**🌐 Live App**: [https://which-witch-v1-mnoigi2vi-whichwitch.vercel.app/](https://which-witch-v1-mnoigi2vi-whichwitch.vercel.app/)  
-*Fully deployed with smart contracts, database, MetaMask wallet integration, and IPFS storage. Try it now!*
+## 🚀 核心功能
 
-**📊 Presentation**: [View on Canva](https://www.canva.com/design/DAG5t6aAKIU/JLK99jHgZNk_ge5mS-qDsQ/view?utm_content=DAG5t6aAKIU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3a5cb0fa9a)
+### 🎨 创作管理
+- **原创作品注册** - 在区块链上注册原创作品
+- **衍生作品管理** - 管理和追踪衍生作品关系
+- **NFT 铸造** - 将作品铸造为 NFT
+- **版权保护** - 基于智能合约的版权管理
 
----
+### 🤖 AI 助手
+- **创作助手** - AI 驱动的创作建议和头脑风暴
+- **交易助手** - 市场分析和交易建议
+- **钱包管理** - Web3 教育和财务管理建议
+- **智能聊天** - 上下文感知的 AI 对话
 
-## 🎯 Mission
+### 🏪 NFT 市场
+- **NFT 交易** - 买卖 NFT 作品
+- **挂单管理** - 灵活的挂单和出价系统
+- **跨链支付** - 支持多链交易
+- **市场统计** - 实时市场数据分析
 
-Build an on-chain creation platform for **recording**, **incentivizing**, and **tracing** every creation. Enable automatic authorization and revenue sharing for original works, safeguarding creators' income and fostering continuous creation and sharing.
+### 🌐 社交网络
+- **CyberGraph 集成** - 去中心化社交图谱
+- **创作者档案** - 个性化创作者页面
+- **社交互动** - 关注、点赞、评论功能
 
----
+## 🛠 技术栈
 
-## ✨ Core Features
+### 前端
+- **Next.js 14** - React 全栈框架
+- **TypeScript** - 类型安全
+- **Tailwind CSS** - 样式框架
+- **Wagmi + RainbowKit** - Web3 连接
+- **Axios** - HTTP 客户端
 
-### 🔗 On-Chain Creation Tracking
-- Register original works on blockchain
-- Create derivative works with parent-child relationships
-- Build transparent creation genealogy
+### 区块链
+- **ZetaChain** - 主要部署网络
+- **Ethereum Sepolia** - 测试网络
+- **Hardhat** - 智能合约开发
+- **Ethers.js** - 区块链交互
 
-### 💰 Automatic Revenue Distribution
-- Smart contract-based payment splitting
-- Pull-based withdrawal pattern for gas efficiency
-- Platform fee: 10% on withdrawal
+### 后端服务
+- **Node.js + Express** - API 服务器
+- **Supabase** - 数据库和认证
+- **通义千问 API** - AI 服务
+- **IPFS (Pinata)** - 去中心化存储
 
-### 🎨 Creator-Friendly Workflow
-1. **Upload** - Register original artwork on-chain
-2. **Authorize** - Request permission (pay for license)
-3. **Remix** - Create and register derivative works
-4. **Earn** - Automatic revenue sharing across creation chain
-5. **Withdraw** - Pull earnings anytime
-
----
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend**: Next.js 14, React, TailwindCSS
-- **Blockchain**: Ethereum (Sepolia Testnet), Solidity
-- **Web3**: Wagmi, Viem
-- **Database**: Supabase (PostgreSQL)
-- **Storage**: IPFS (Pinata)
-- **Deployment**: Vercel
-
-### Smart Contracts
-
-Three core contracts power the platform:
-
-- **CreationManager** - Registers works and tracks creation relationships
-- **AuthorizationManager** - Handles authorization requests and verifies permissions
-- **PaymentManager** - Distributes payments and manages creator balances
-
-### Contract Interaction Flow
-
-```
-User (Register Original) → CreationManager.registerOriginalWork()
-                          └─ Store work info
-
-User (Request Auth) → AuthorizationManager.requestAuthorization()
-                    ├─ CreationManager.getWork() [Query work info]
-                    ├─ CreationManager.getCreatorChain() [Get ancestors]
-                    └─ PaymentManager.distributeRevenue() [Split payment]
-
-User (Register Derivative) → CreationManager.registerDerivativeWork()
-                            └─ AuthorizationManager.hasAuthorization() [Verify auth]
-
-User (Withdraw) → PaymentManager.withdraw()
-                └─ Transfer balance
-```
-
-### Revenue Distribution Rules
-
-| Scenario | Direct Creator | Original Creator | Middle Ancestors |
-|----------|---------------|------------------|------------------|
-| **Original Work Authorization** | 40% | - | - |
-| **1-Level Derivative** | 40% | 60% (40% + 20%) | - |
-| **Multi-Level Derivative** | 40% | 40% | 20% (split) |
-
----
-
-## 👥 Team
-
-| Role | Member | Responsibilities |
-|------|--------|------------------|
-| **Project Management** | Xiaoyuan | Define scope, coordinate team, drive execution |
-| **UI Design & Frontend** | Kekeke | Design interface, implement frontend |
-| **Contract Development** | Xiaoguai | Write contracts, manage blockchain integration |
-| **Database & Backend** | Jiajia | Setup database, provide APIs, implement data operations |
-| **Project Coordination** | Relax | Logo design, documentation, coordinate meetings, testing |
-
----
-
-## 🚀 Roadmap
-
-### V1.0 (✅) - Foundation
-**Goal**: Complete "Create → Authorize → Remix → Revenue Split → Withdraw" workflow
-
-**Features**:
-- Upload works and tip functionality
-- Authorization request with automatic approval and status display
-- Automatic revenue distribution across creation chain
-- Creation system with tags and searchable categories
-
-### V2.0 (Ongoing) - Ecosystem Expansion
-**New Features**:
-- Enhanced security (anti-plagiarism, frontend security optimization)
-- NFT integration (mint, trade, secondary creation tracking)
-- Advanced product features and optimization
-
-### V3.0 (Future) - Community & Incentives
-**Upcoming**:
-- Creator reputation and reward pool
-- DAO governance (voting on rules, revenue distribution)
-- Creator leaderboards (history, reputation, earnings, collaborations)
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- MetaMask wallet
-- Alchemy API key
-- Supabase account
-- Pinata account
-
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/iqnuxul/whichWitch.git
-cd whichWitch
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env.local
-# Edit .env.local with your credentials
-
-# Initialize database
-# Run src/backend/supabase/schema.sql in Supabase SQL Editor
-
-# Start development server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000)
-
----
-
-## 📁 Project Structure
+## 📦 项目结构
 
 ```
 whichWitch/
-├── src/
-│   ├── ui/
-│   │   ├── app/              # Next.js app directory
-│   │   ├── components/       # React components
-│   │   └── lib/             # Utilities and integrations
-│   ├── backend/
-│   │   └── supabase/        # Database schemas
-│   └── contracts/           # Smart contract source code
-├── .env.example             # Environment template
-└── README.md               # This file
+├── app/                    # Next.js App Router
+│   ├── api/               # API 路由
+│   ├── auth/              # 认证页面
+│   ├── ai-assistant/      # AI 助手页面
+│   ├── marketplace/       # NFT 市场
+│   ├── cybergraph/        # 社交功能
+│   └── test-web3/         # Web3 测试
+├── components/            # React 组件
+├── contexts/              # React Context
+├── lib/                   # 工具库
+│   ├── api.ts            # API 客户端
+│   └── hooks/            # 自定义 Hooks
+├── src/                   # 后端源码
+│   ├── backend/          # Express 服务器
+│   ├── contracts/        # 智能合约
+│   └── utils/            # 工具函数
+├── types/                 # TypeScript 类型定义
+├── scripts/              # 部署和工具脚本
+└── docs/                 # 项目文档
 ```
 
----
-
-## 🤝 Partners
-
-*Coming soon*
-
----
-
-## 📬 Contact
-
-For inquiries, please reach out through [GitHub Issues](https://github.com/iqnuxul/whichWitch/issues).
-Email: mluxunqi@gamil.com
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details
-
----
-
-**Built with ❤️ by the WhichWitch Team**

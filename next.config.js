@@ -15,16 +15,19 @@ const nextConfig = {
         tls: false,
       };
       
-      // 忽略 MetaMask SDK 的 React Native 依赖
+      // 使用空模块替代不兼容的依赖
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@react-native-async-storage/async-storage': false,
+        '@react-native-async-storage/async-storage': require.resolve('./lib/empty-module.js'),
+        'pino-pretty': require.resolve('./lib/empty-module.js'),
       };
     }
     
-    // 忽略构建警告
+    // 忽略构建警告 - 这些警告不会影响功能
     config.ignoreWarnings = [
       /Module not found: Can't resolve '@react-native-async-storage\/async-storage'/,
+      /Module not found: Can't resolve 'pino-pretty'/,
+      /Critical dependency: the request of a dependency is an expression/,
     ];
     
     return config;

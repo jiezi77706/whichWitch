@@ -1,6 +1,14 @@
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
+// 确保 process 对象可用
+declare const process: {
+  env: {
+    NEXT_PUBLIC_API_URL?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 // 创建axios实例
@@ -20,6 +28,14 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+// 定义 API 响应类型
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
 
 // 响应拦截器 - 处理错误
 api.interceptors.response.use(
@@ -70,8 +86,36 @@ export const authAPI = {
 // AI API
 export const aiAPI = {
   // AI聊天
-  chat: (data: { query: string }) =>
+  chat: (data: { query: string; userContext?: any }) =>
     api.post('/api/ai/chat', data),
+
+  // 获取市场数据
+  getMarketData: () =>
+    api.get('/api/ai/market-data'),
+
+  // 生成作品描述
+  generateWorkDescription: (data: { workTitle: string; workType?: string; userInput?: string }) =>
+    api.post('/api/ai/generate-description', data),
+
+  // 头脑风暴
+  brainstormIdeas: (data: { workTitle: string; currentDescription?: string; creativeGoals?: string }) =>
+    api.post('/api/ai/brainstorm', data),
+
+  // 市场分析
+  getMarketAnalysis: (preferences?: any) =>
+    api.get('/api/ai/market-analysis', { params: { userPreferences: JSON.stringify(preferences || {}) } }),
+
+  // 交易建议
+  getTradingAdvice: (data: { walletAddress: string; userPreferences?: any }) =>
+    api.post('/api/ai/trading-advice', data),
+
+  // Web3教育
+  getWeb3Education: (data: { question: string; userLevel?: string }) =>
+    api.post('/api/ai/web3-education', data),
+
+  // 钱包管理
+  getWalletManagement: (data?: { walletAddress?: string; userGoals?: any }) =>
+    api.post('/api/ai/wallet-management', data || {}),
 
   // 钱包建议
   getWalletAdvice: (data: { email: string; preferences?: any }) =>
@@ -88,10 +132,6 @@ export const aiAPI = {
   // 创作建议
   getCreationAdvice: (data: { workType: string; parentWork?: any }) =>
     api.post('/api/ai/creation-advice', data),
-
-  // 钱包管理
-  getWalletManagement: () =>
-    api.get('/api/ai/wallet-management'),
 
   // 风险评估
   assessRisk: (data: { transactionType: string; amount: string }) =>

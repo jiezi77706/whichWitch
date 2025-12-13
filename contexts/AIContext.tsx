@@ -40,8 +40,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.chat({ query })
       
-      if (response.data?.success) {
-        return response.data.response
+      if (response.success) {
+        return response.response
       } else {
         toast.error('AI助手暂时无法回应，请稍后再试')
         return null
@@ -62,8 +62,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.getWalletAdvice({ email, preferences })
       
-      if (response.data?.success) {
-        return response.data.advice
+      if (response.success) {
+        return response.advice
       } else {
         toast.error('获取钱包建议失败')
         return null
@@ -89,8 +89,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.getCreationAdvice({ workType, parentWork })
       
-      if (response.data?.success) {
-        return response.data.advice
+      if (response.success) {
+        return response.advice
       } else {
         toast.error('获取创作建议失败')
         return null
@@ -116,8 +116,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.getWalletManagement()
       
-      if (response.data?.success) {
-        return response.data.advice
+      if (response.success) {
+        return response.advice
       } else {
         toast.error('获取钱包管理建议失败')
         return null
@@ -143,8 +143,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.assessRisk({ transactionType, amount })
       
-      if (response.data?.success) {
-        return response.data.assessment
+      if (response.success) {
+        return response.assessment
       } else {
         toast.error('风险评估失败')
         return null
@@ -170,8 +170,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
       
       const response = await aiAPI.getContractAdvice({ contractFunction, parameters })
       
-      if (response.data?.success) {
-        return response.data.advice
+      if (response.success) {
+        return response.advice
       } else {
         toast.error('获取合约建议失败')
         return null

@@ -7,7 +7,7 @@ import { walletConnectWallet, injectedWallet } from '@rainbow-me/rainbowkit/wall
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '../contexts/AuthContext'
 import { AIProvider } from '../contexts/AIContext'
-import { Web3Provider } from '../src/contexts/Web3Context'
+import { Web3Provider } from '../contexts/Web3Context'
 import '@rainbow-me/rainbowkit/styles.css'
 
 // ZetaChain 测试网配置

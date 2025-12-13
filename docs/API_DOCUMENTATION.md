@@ -360,7 +360,7 @@ if (data.success) {
 }
 
 // 使用项目中的 API 客户端
-import { blockchainAPI } from '../src/utils/api';
+import { transactionAPI } from '../lib/api';
 
 try {
   const networkStatus = await blockchainAPI.getNetworkStatus();

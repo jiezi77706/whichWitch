@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useWeb3Context } from '../../src/contexts/Web3Context';
-import { aiAPI } from '../../src/utils/api';
+import { useWeb3Context } from '../../contexts/Web3Context';
+import { aiAPI } from '../../lib/api';
 
 export default function AIAssistantPage() {
   const { account, isConnected } = useWeb3Context();
@@ -62,8 +62,8 @@ export default function AIAssistantPage() {
     const fetchMarketData = async () => {
       try {
         const response = await aiAPI.getMarketData();
-        if (response.data?.success) {
-          setMarketData(response.data.data);
+        if (response.success) {
+          setMarketData(response.data);
         }
       } catch (error) {
         console.error('获取市场数据失败:', error);
@@ -86,16 +86,16 @@ export default function AIAssistantPage() {
         workTitle,
         workType,
         userInput,
-        userProfile: { account, isConnected }
+        // userProfile: { account, isConnected }
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         setResults(prev => ({
           ...prev,
-          description: response.data.description
+          description: (response as any).description
         }));
       } else {
-        alert('生成失败: ' + response.error);
+        alert('生成失败: ' + (response.error || '未知错误'));
       }
     } catch (error) {
       console.error('生成作品简介失败:', error);
@@ -120,13 +120,13 @@ export default function AIAssistantPage() {
         creativeGoals
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         setResults(prev => ({
           ...prev,
-          brainstorm: response.data.ideas
+          brainstorm: (response as any).ideas
         }));
       } else {
-        alert('头脑风暴失败: ' + response.error);
+        alert('头脑风暴失败: ' + (response.error || '未知错误'));
       }
     } catch (error) {
       console.error('头脑风暴失败:', error);
@@ -142,14 +142,14 @@ export default function AIAssistantPage() {
     try {
       const response = await aiAPI.getMarketAnalysis(userPreferences);
 
-      if (response.data?.success) {
+      if (response.success) {
         setResults(prev => ({
           ...prev,
-          marketAnalysis: response.data.analysis,
-          marketData: response.data.marketData
+          marketAnalysis: (response as any).analysis,
+          marketData: (response as any).marketData
         }));
       } else {
-        alert('市场分析失败: ' + response.error);
+        alert('市场分析失败: ' + (response.error || '未知错误'));
       }
     } catch (error) {
       console.error('市场分析失败:', error);
@@ -173,14 +173,14 @@ export default function AIAssistantPage() {
         userPreferences
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         setResults(prev => ({
           ...prev,
-          tradingAdvice: response.data.advice,
-          walletData: response.data.walletData
+          tradingAdvice: (response as any).advice,
+          walletData: (response as any).walletData
         }));
       } else {
-        alert('获取交易建议失败: ' + response.error);
+        alert('获取交易建议失败: ' + (response.error || '未知错误'));
       }
     } catch (error) {
       console.error('获取交易建议失败:', error);
@@ -204,13 +204,13 @@ export default function AIAssistantPage() {
         userLevel
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         setResults(prev => ({
           ...prev,
-          web3Education: response.data.explanation
+          web3Education: (response as any).explanation
         }));
       } else {
-        alert('获取解答失败: ' + response.error);
+        alert('获取解答失败: ' + (response.error || '未知错误'));
       }
     } catch (error) {
       console.error('获取解答失败:', error);
@@ -234,14 +234,14 @@ export default function AIAssistantPage() {
         userGoals: walletGoals
       });
 
-      if (response.data?.success) {
+      if ((response as any).success) {
         setResults(prev => ({
           ...prev,
-          walletManagement: response.data.advice,
-          walletData: response.data.walletData
+          walletManagement: (response as any).advice,
+          walletData: (response as any).walletData
         }));
       } else {
-        alert('获取管理建议失败: ' + response.error);
+        alert('获取管理建议失败: ' + ((response as any).error || '未知错误'));
       }
     } catch (error) {
       console.error('获取管理建议失败:', error);
@@ -270,18 +270,18 @@ export default function AIAssistantPage() {
         }
       });
 
-      if (response.data?.success) {
+      if ((response as any).success) {
         const newMessage = {
           id: Date.now(),
           question: chatQuery,
-          answer: response.data.response,
+          answer: (response as any).response,
           timestamp: new Date()
         };
         
         setChatHistory(prev => [...prev, newMessage]);
         setChatQuery('');
       } else {
-        alert('聊天失败: ' + response.error);
+        alert('聊天失败: ' + ((response as any).error || '未知错误'));
       }
     } catch (error) {
       console.error('聊天失败:', error);

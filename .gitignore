@@ -8,8 +8,24 @@ typechain-types
 # 敏感配置文件
 *.key
 *.pem
+*.p12
+*.pfx
 config/secrets.js
 config/production.js
+secrets/
+private/
+
+# 私钥和钱包文件
+wallet.json
+keystore/
+*.keystore
+mnemonic.txt
+seed.txt
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
 
 # Hardhat files
 cache
