@@ -62,8 +62,8 @@ export default function AIAssistantPage() {
     const fetchMarketData = async () => {
       try {
         const response = await aiAPI.getMarketData();
-        if (response.success) {
-          setMarketData(response.data);
+        if (response.data?.success) {
+          setMarketData(response.data.data);
         }
       } catch (error) {
         console.error('获取市场数据失败:', error);
@@ -89,10 +89,10 @@ export default function AIAssistantPage() {
         userProfile: { account, isConnected }
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          description: response.description
+          description: response.data.description
         }));
       } else {
         alert('生成失败: ' + response.error);
@@ -120,10 +120,10 @@ export default function AIAssistantPage() {
         creativeGoals
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          brainstorm: response.ideas
+          brainstorm: response.data.ideas
         }));
       } else {
         alert('头脑风暴失败: ' + response.error);
@@ -142,11 +142,11 @@ export default function AIAssistantPage() {
     try {
       const response = await aiAPI.getMarketAnalysis(userPreferences);
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          marketAnalysis: response.analysis,
-          marketData: response.marketData
+          marketAnalysis: response.data.analysis,
+          marketData: response.data.marketData
         }));
       } else {
         alert('市场分析失败: ' + response.error);
@@ -173,11 +173,11 @@ export default function AIAssistantPage() {
         userPreferences
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          tradingAdvice: response.advice,
-          walletData: response.walletData
+          tradingAdvice: response.data.advice,
+          walletData: response.data.walletData
         }));
       } else {
         alert('获取交易建议失败: ' + response.error);
@@ -204,10 +204,10 @@ export default function AIAssistantPage() {
         userLevel
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          web3Education: response.explanation
+          web3Education: response.data.explanation
         }));
       } else {
         alert('获取解答失败: ' + response.error);
@@ -234,11 +234,11 @@ export default function AIAssistantPage() {
         userGoals: walletGoals
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         setResults(prev => ({
           ...prev,
-          walletManagement: response.advice,
-          walletData: response.walletData
+          walletManagement: response.data.advice,
+          walletData: response.data.walletData
         }));
       } else {
         alert('获取管理建议失败: ' + response.error);
@@ -270,11 +270,11 @@ export default function AIAssistantPage() {
         }
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         const newMessage = {
           id: Date.now(),
           question: chatQuery,
-          answer: response.response,
+          answer: response.data.response,
           timestamp: new Date()
         };
         

@@ -75,11 +75,11 @@ export default function CreateListingPage() {
         allowCrossChain: formData.allowCrossChain
       })
       
-      if (response.success) {
+      if (response.data?.success) {
         toast.success('NFT挂单成功！')
         router.push('/marketplace')
       } else {
-        toast.error(response.error || '挂单失败')
+        toast.error(response.data.error || '挂单失败')
       }
     } catch (error: any) {
       console.error('Create listing error:', error)

@@ -41,7 +41,7 @@ export default function AuthPage() {
     try {
       const response = await authAPI.emailRegister(registerForm);
       
-      if (response.success) {
+      if (response.data?.success) {
         setMessage('注册成功！钱包已自动创建。');
         
         // 显示钱包信息
@@ -88,7 +88,7 @@ ${response.securityAdvice.securityTips.join('\n')}
     try {
       const response = await authAPI.emailLogin(loginForm);
       
-      if (response.success) {
+      if (response.data?.success) {
         setMessage('登录成功！');
         
         // 保存 token
@@ -137,7 +137,7 @@ ${response.securityAdvice.securityTips.join('\n')}
           message
         });
         
-        if (response.success) {
+        if (response.data?.success) {
           setMessage('钱包登录成功！');
           
           // 保存 token
