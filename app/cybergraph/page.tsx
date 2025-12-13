@@ -91,9 +91,9 @@ export default function CyberGraphPage() {
   const fetchSyncStatus = async () => {
     try {
       const response = await cyberGraphAPI.getSyncStatus()
-      if (response.success) {
-        setSyncRecords(response.syncs)
-        setSyncStats(response.stats)
+      if (response.data?.success) {
+        setSyncRecords(response.data.syncs)
+        setSyncStats(response.data.stats)
       }
     } catch (error) {
       console.error('Fetch sync status error:', error)
@@ -103,8 +103,8 @@ export default function CyberGraphPage() {
   const fetchTrendingContent = async () => {
     try {
       const response = await cyberGraphAPI.getTrending()
-      if (response.success) {
-        setTrendingContent(response.trending)
+      if (response.data?.success) {
+        setTrendingContent(response.data.trending)
       }
     } catch (error) {
       console.error('Fetch trending content error:', error)
@@ -130,11 +130,11 @@ export default function CyberGraphPage() {
         category: 'art'
       })
 
-      if (response.success) {
+      if (response.data?.success) {
         toast.success('作品已开始同步到CyberGraph！')
         fetchSyncStatus()
       } else {
-        toast.error(response.error || '同步失败')
+        toast.error(response.data?.error || '同步失败')
       }
     } catch (error: any) {
       console.error('Sync work error:', error)
@@ -157,10 +157,10 @@ export default function CyberGraphPage() {
       
       const response = await cyberGraphAPI.updateProfile(profileForm)
       
-      if (response.success) {
+      if (response.data?.success) {
         toast.success('档案已更新到CyberGraph！')
       } else {
-        toast.error(response.error || '更新失败')
+        toast.error(response.data?.error || '更新失败')
       }
     } catch (error: any) {
       console.error('Update profile error:', error)
@@ -181,10 +181,10 @@ export default function CyberGraphPage() {
         limit: 20
       })
       
-      if (response.success) {
-        setSearchResults(response.results)
+      if (response.data?.success) {
+        setSearchResults(response.data.results)
       } else {
-        toast.error(response.error || '搜索失败')
+        toast.error(response.data?.error || '搜索失败')
       }
     } catch (error: any) {
       console.error('Search error:', error)
