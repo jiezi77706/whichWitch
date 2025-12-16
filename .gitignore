@@ -1,0 +1,37 @@
+node_modules
+.env
+.env.local
+coverage
+coverage.json
+typechain-types
+
+# Hardhat files
+cache
+artifacts
+
+# Next.js files
+.next/
+out/
+build/
+
+# Build files
+dist
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Backup
+temp_backup/
+teammate-package.json
