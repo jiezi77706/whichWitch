@@ -182,18 +182,32 @@ Open [http://localhost:3000](http://localhost:3000)
 ## 📁 Project Structure
 
 ```
-whichWitch/
-├── src/
-│   ├── ui/
-│   │   ├── app/              # Next.js app directory
-│   │   ├── components/       # React components
-│   │   └── lib/             # Utilities and integrations
-│   ├── backend/
-│   │   └── supabase/        # Database schemas
-│   └── contracts/           # Smart contract source code
-├── .env.example             # Environment template
-└── README.md               # This file
+whichWitch-main/
+├── 📱 app/                   # Next.js App Router
+│   ├── api/                  # API Routes (IPFS, users, works)
+│   ├── app/                  # Main application page
+│   └── page.tsx              # Landing page
+├── 🧩 components/            # React Components
+│   ├── landing/              # Landing page components
+│   ├── ui/                   # Reusable UI components
+│   └── whichwitch/           # Main app components
+├── 📚 docs/                  # Documentation & guides
+├── 📦 lib/                   # Utility libraries & integrations
+│   ├── hooks/                # React hooks
+│   ├── services/             # Business logic
+│   ├── supabase/             # Database operations
+│   └── web3/                 # Blockchain integration
+├── 🔧 scripts/               # Utility scripts (organized by feature)
+│   ├── contracts/            # Contract testing & verification
+│   ├── database/             # Database management
+│   ├── nft/                  # NFT operations
+│   └── testing/              # Integration testing
+└── 🏗️ src/                   # Source code
+    ├── backend/supabase/     # Database migrations
+    └── contracts/            # Smart contracts (v2.0)
 ```
+
+📋 **Detailed Structure**: See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for complete organization details.
 
 ---
 

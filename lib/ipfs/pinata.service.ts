@@ -1,91 +1,76 @@
 /**
- * Pinata IPFS 服务 - 处理文件上传到 IPFS
+ * Pinata IPFS 服务 - 通过安全API处理文件上传到 IPFS
+ * v2.0: 使用服务端API确保API密钥安全
  */
 
-const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY;
-const PINATA_SECRET = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
-const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
-
-const PINATA_API_URL = 'https://api.pinata.cloud';
 const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
 
 /**
- * 上传文件到 Pinata
+ * 上传文件到 Pinata (通过安全API)
  */
 export async function uploadFileToPinata(file: File): Promise<string> {
-  // 检查配置
-  if (!PINATA_JWT) {
-    throw new Error('Pinata JWT not configured. Please set PINATA_JWT environment variable.');
-  }
-
   try {
+    console.log('📤 通过安全API上传文件到IPFS...', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+
     const formData = new FormData();
     formData.append('file', file);
 
-    const metadata = JSON.stringify({
-      name: file.name,
-    });
-    formData.append('pinataMetadata', metadata);
-
-    console.log('Uploading to Pinata...');
-    const response = await fetch(`${PINATA_API_URL}/pinning/pinFileToIPFS`, {
+    const response = await fetch('/api/ipfs/upload-file', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${PINATA_JWT}`,
-      },
       body: formData,
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Pinata error response:', errorText);
-      throw new Error(`Pinata upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorData = await response.json();
+      console.error('❌ IPFS上传API错误:', errorData);
+      throw new Error(`IPFS upload failed: ${errorData.error || response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('Pinata upload successful:', data.IpfsHash);
-    return data.IpfsHash;
+    console.log('✅ IPFS上传成功:', data.ipfsHash);
+    return data.ipfsHash;
   } catch (error) {
-    console.error('Error uploading file to Pinata:', error);
+    console.error('❌ 文件上传到IPFS失败:', error);
     throw error;
   }
 }
 
 /**
- * 上传 JSON 数据到 Pinata
+ * 上传 JSON 数据到 Pinata (通过安全API)
  */
 export async function uploadJSONToPinata(jsonData: any, name?: string): Promise<string> {
-  // 检查配置
-  if (!PINATA_JWT) {
-    throw new Error('Pinata JWT not configured. Please set PINATA_JWT environment variable.');
-  }
-
   try {
-    console.log('Uploading JSON to Pinata...');
-    const response = await fetch(`${PINATA_API_URL}/pinning/pinJSONToIPFS`, {
+    console.log('📤 通过安全API上传JSON到IPFS...', {
+      name: name || 'metadata.json',
+      dataKeys: Object.keys(jsonData)
+    });
+
+    const response = await fetch('/api/ipfs/upload-json', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${PINATA_JWT}`,
       },
       body: JSON.stringify({
-        pinataContent: jsonData,
-        pinataMetadata: {
-          name: name || 'metadata.json',
-        },
+        jsonData,
+        name: name || 'metadata.json',
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Pinata JSON error response:', errorText);
-      throw new Error(`Pinata JSON upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorData = await response.json();
+      console.error('❌ IPFS JSON上传API错误:', errorData);
+      throw new Error(`IPFS JSON upload failed: ${errorData.error || response.statusText}`);
     }
 
     const data = await response.json();
-    return data.IpfsHash;
+    console.log('✅ IPFS JSON上传成功:', data.ipfsHash);
+    return data.ipfsHash;
   } catch (error) {
-    console.error('Error uploading JSON to Pinata:', error);
+    console.error('❌ JSON上传到IPFS失败:', error);
     throw error;
   }
 }
@@ -159,7 +144,32 @@ export async function uploadMultipleFiles(files: File[]): Promise<string[]> {
 
 /**
  * 检查 Pinata 配置是否有效
+ * v2.0: 通过API检查服务端配置
  */
-export function isPinataConfigured(): boolean {
-  return !!(PINATA_JWT || (PINATA_API_KEY && PINATA_SECRET));
+export async function isPinataConfigured(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/ipfs/upload-json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonData: { test: true },
+        name: 'config-test.json',
+      }),
+    });
+    
+    // 如果返回配置错误，说明未配置
+    if (response.status === 500) {
+      const errorData = await response.json();
+      if (errorData.error?.includes('configuration')) {
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('检查Pinata配置失败:', error);
+    return false;
+  }
 }

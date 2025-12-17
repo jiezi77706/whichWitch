@@ -12,15 +12,12 @@ import type { UserProfile } from "./app-container"
 import { UploadCloud, CheckCircle2, X } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useAccount } from "wagmi"
-import { uploadFileToPinata, createAndUploadMetadata } from "@/lib/ipfs/pinata.service"
-import { registerOriginalWork, registerDerivativeWork } from "@/lib/web3/services/contract.service"
-import { createWork } from "@/lib/supabase/services"
+
+import { NetworkSwitcher } from "./network-switcher"
 import { useCollections } from "@/lib/hooks/useCollections"
 import { useUser } from "@/lib/hooks/useUser"
 
 export function UploadView({ 
-  user, 
-  isRemix = false, 
   onAddWork,
   preselectedParentWorkId,
   onClearPreselection,
@@ -62,6 +59,13 @@ export function UploadView({
     licenseFee: "0.05"
   })
 
+  // NFT相关状态
+  const [mintNFT, setMintNFT] = useState(false)
+  const [nftMetadata, setNftMetadata] = useState({
+    name: "",
+    description: "",
+  })
+
   const SUGGESTED_TAGS = ["Cyberpunk", "Minimalist", "Nature", "Abstract", "Surreal"]
   const SUGGESTED_MATERIALS = ["Digital", "Wood", "Clay", "Glass", "Metal"]
 
@@ -80,85 +84,86 @@ export function UploadView({
     setErrorMessage("")
 
     try {
-      // 1. 上传所有图片到 IPFS
-      console.log("Uploading images to IPFS...")
-      const imageHashes = await Promise.all(files.map(file => uploadFileToPinata(file)))
-      const imageUrls = imageHashes.map(hash => `https://gateway.pinata.cloud/ipfs/${hash}`)
-      const imageUrl = imageUrls[0] // 主图片
+      // 使用新的分离式上传服务
+      const { uploadWorkToDatabase, mintExistingWork, mintNFTForWork } = await import('@/lib/services/work-upload.service')
       
-      // 2. 创建并上传 metadata
-      console.log("Creating metadata...")
-      const metadataHash = await createAndUploadMetadata({
+      const workUploadData = {
         title: formData.title,
         description: formData.story,
         story: formData.story,
-        imageHash: imageHashes[0],
-        images: imageUrls,
-        material: materialTags,
-        tags: tags,
-        creator: address,
-        parentWorkId: mode === "remix" ? selectedParentWork : undefined,
-      })
-      const metadataUri = `ipfs://${metadataHash}`
-      
-      // 3. 调用合约注册作品
-      console.log("Registering work on blockchain...")
-      let contractResult
-      if (mode === "remix" && selectedParentWork) {
-        contractResult = await registerDerivativeWork(
-          BigInt(selectedParentWork),
-          formData.licenseFee,
-          allowRemix,
-          metadataUri
-        )
-      } else {
-        contractResult = await registerOriginalWork(
-          formData.licenseFee,
-          allowRemix,
-          metadataUri
-        )
-      }
-      
-      // 4. 保存到数据库
-      console.log("Saving to database...")
-      console.log("Work ID from contract:", contractResult.workId.toString())
-      
-      const workData = {
-        workId: Number(contractResult.workId),
-        creatorAddress: address,
-        title: formData.title,
-        description: formData.story,
-        imageUrl: imageUrl,
-        images: imageUrls,
-        metadataUri: metadataUri,
         material: materialTags,
         tags: tags,
         allowRemix: allowRemix,
         licenseFee: formData.licenseFee,
         isRemix: mode === "remix",
-        parentWorkId: mode === "remix" ? selectedParentWork : null,
+        parentWorkId: mode === "remix" ? selectedParentWork : undefined,
       }
-      
-      console.log('🔗 Creating work with data:', {
-        mode,
-        selectedParentWork,
-        isRemix: workData.isRemix,
-        parentWorkId: workData.parentWorkId,
-        workId: workData.workId,
-      })
-      
-      const newWork = await createWork(workData)
-      
-      console.log("Work uploaded successfully!")
+
+      console.log('📤 第一步：上传作品到数据库和IPFS...')
+
+      // 第一步：总是先上传到数据库和IPFS
+      const uploadResult = await uploadWorkToDatabase(
+        files,
+        workUploadData,
+        address
+      )
+
+      console.log("✅ 作品上传到数据库完成!", uploadResult)
+
+      let finalResult = uploadResult
+
+      // 第二步：如果用户选择mint，则进行区块链操作
+      if (mintNFT) {
+        console.log('⛓️ 第二步：Mint到区块链...')
+        
+        const mintResult = await mintExistingWork(
+          uploadResult.work.workId,
+          workUploadData,
+          address,
+          uploadResult.work.metadataUri
+        )
+
+        console.log("✅ 区块链mint完成!", mintResult)
+
+        // 第三步：铸造NFT
+        console.log('🎨 第三步：铸造NFT...')
+        
+        const nftResult = await mintNFTForWork(
+          mintResult.blockchainWorkId,
+          address,
+          {
+            name: nftMetadata.name || formData.title,
+            description: nftMetadata.description || formData.story,
+            attributes: [
+              { trait_type: 'Upload Method', value: 'WhichWitch v2.0' },
+              { trait_type: 'Auto IPFS', value: 'Yes' },
+            ]
+          }
+        )
+
+        console.log("✅ NFT铸造完成!", nftResult)
+
+        // 更新最终结果
+        finalResult = {
+          ...uploadResult,
+          work: {
+            ...uploadResult.work,
+            workId: mintResult.blockchainWorkId,
+            txHash: mintResult.txHash
+          },
+          onChain: true
+        }
+      }
+
       setStatus("success")
       
       // 通知父组件
       if (onAddWork) {
-        onAddWork(newWork)
+        onAddWork(finalResult)
       }
       
     } catch (error) {
-      console.error("Upload failed:", error)
+      console.error("❌ 上传失败:", error)
       setErrorMessage(error instanceof Error ? error.message : "Upload failed. Please try again.")
       setStatus("error")
     }
@@ -186,10 +191,36 @@ export function UploadView({
           <CheckCircle2 className="w-10 h-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold">{mode === "remix" ? "Remix Uploaded!" : "Work Minted Successfully!"}</h2>
-          <p className="text-muted-foreground max-w-xs mx-auto">
-            Your work has been recorded on the blockchain and added to the genealogy tree.
+          <h2 className="text-2xl font-bold">
+            {mode === "remix" ? "Remix Uploaded!" : "Work Uploaded Successfully!"}
+          </h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {mintNFT 
+              ? "Your work has been uploaded to IPFS, recorded on the blockchain, and minted as an NFT!"
+              : "Your work has been uploaded to IPFS and saved to the database. It's now visible on the square page!"
+            }
           </p>
+          
+          {mintNFT ? (
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+              <p className="font-medium text-primary mb-1">🎨 Complete NFT Creation!</p>
+              <p className="text-xs text-muted-foreground">
+                ✅ Uploaded to IPFS<br/>
+                ✅ Recorded on blockchain<br/>
+                ✅ Minted as NFT<br/>
+                Your work is now fully on-chain and tradeable!
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm">
+              <p className="font-medium text-blue-500 mb-1">📤 Database Upload Complete!</p>
+              <p className="text-xs text-muted-foreground">
+                ✅ Uploaded to IPFS<br/>
+                ✅ Saved to database<br/>
+                💡 You can mint to blockchain later from your profile or the square page!
+              </p>
+            </div>
+          )}
         </div>
         <Button onClick={() => {
           setStatus("idle")
@@ -198,6 +229,8 @@ export function UploadView({
           setTags([])
           setMaterialTags([])
           setSelectedParentWork(null)
+          setMintNFT(false)
+          setNftMetadata({ name: "", description: "" })
           if (onClearPreselection) onClearPreselection()
         }} className="w-full max-w-xs">
           Upload Another
@@ -231,6 +264,9 @@ export function UploadView({
 
   return (
     <div className="space-y-6">
+      {/* 网络状态检查 */}
+      <NetworkSwitcher />
+      
       <div className="space-y-4">
         <div className="flex items-center p-1 bg-muted rounded-lg w-full">
           <button
@@ -245,6 +281,16 @@ export function UploadView({
           >
             Remix Work
           </button>
+        </div>
+
+        {/* 上传流程说明 */}
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm">
+          <p className="font-medium text-blue-500 mb-2">📤 New Upload Flow</p>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• <strong>Step 1:</strong> Your work is uploaded to IPFS and saved to database</p>
+            <p>• <strong>Step 2:</strong> Choose to mint to blockchain now or later</p>
+            <p>• <strong>Result:</strong> Work appears on square page immediately, mint when ready!</p>
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -528,6 +574,53 @@ export function UploadView({
               />
             </div>
           )}
+
+          {/* NFT铸造选项 */}
+          <div className="space-y-4 p-4 border rounded-lg bg-primary/5 border-primary/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base text-primary">🎨 Mint as NFT (Optional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Choose to mint your work as an NFT immediately, or upload to database first and mint later
+                </p>
+              </div>
+              <Switch checked={mintNFT} onCheckedChange={setMintNFT} />
+            </div>
+
+            {mintNFT && (
+              <div className="space-y-3 animate-in slide-in-from-top-2 pt-2 border-t border-primary/10">
+                <div className="space-y-2">
+                  <Label className="text-sm">NFT Name (Optional)</Label>
+                  <Input 
+                    placeholder={formData.title || "Leave empty to use work title"}
+                    value={nftMetadata.name}
+                    onChange={(e) => setNftMetadata(prev => ({ ...prev, name: e.target.value }))}
+                    className="text-sm"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm">NFT Description (Optional)</Label>
+                  <Textarea
+                    placeholder={formData.story || "Leave empty to use work story"}
+                    value={nftMetadata.description}
+                    onChange={(e) => setNftMetadata(prev => ({ ...prev, description: e.target.value }))}
+                    className="text-sm min-h-[60px]"
+                  />
+                </div>
+
+                <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                  <p className="font-medium mb-1">✨ Auto-generated NFT features:</p>
+                  <ul className="space-y-0.5 text-[10px]">
+                    <li>• IPFS metadata with your images</li>
+                    <li>• Material and tag attributes</li>
+                    <li>• Creator and work ID properties</li>
+                    <li>• External link to your work page</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <Button
@@ -535,7 +628,13 @@ export function UploadView({
           className="w-full h-12 text-lg"
           disabled={files.length === 0 || !formData.title || status === "uploading" || (mode === "remix" && !selectedParentWork)}
         >
-          {status === "uploading" ? "Minting..." : mode === "remix" ? "Mint Remix" : "Mint to Chain"}
+          {status === "uploading" 
+            ? (mintNFT ? "Uploading & Minting..." : "Uploading...") 
+            : (mintNFT 
+              ? (mode === "remix" ? "Upload & Mint Remix" : "Upload & Mint to Chain")
+              : (mode === "remix" ? "Upload Remix" : "Upload Work")
+            )
+          }
         </Button>
       </form>
     </div>

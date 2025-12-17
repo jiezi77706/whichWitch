@@ -8,6 +8,8 @@ import { Heart, Bookmark, GitFork, Share2, Coins, Trash2, Clock, Folder, Lock, U
 import { NFTStatusBadge, NFTStatus } from "./nft-status-badge"
 import { NFTActionButtons } from "./nft-action-buttons"
 import { MintNFTModal, BuyNFTModal, ListNFTModal } from "./nft-modals"
+import { MintNFTModal as RetroactiveMintModal } from "./mint-nft-modal"
+import { MintToBlockchainButton } from "./mint-to-blockchain-button"
 import {
   Dialog,
   DialogContent,
@@ -316,6 +318,17 @@ export function WorkCard({
                     </Button>
                   )}
                   
+                  {/* Mint to Blockchain Button - for database-only works */}
+                  {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
+                    <MintToBlockchainButton 
+                      work={work}
+                      onMintSuccess={(result) => {
+                        console.log('Mint success:', result)
+                        // Optionally refresh the work data or update UI
+                      }}
+                    />
+                  )}
+                  
                   {/* 收藏按钮 */}
                   <Button
                     size="sm"
@@ -394,6 +407,17 @@ export function WorkCard({
                       </Button>
                     )}
                     
+                    {/* Mint to Blockchain Button - for database-only works */}
+                    {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
+                      <MintToBlockchainButton 
+                        work={work}
+                        onMintSuccess={(result) => {
+                          console.log('Mint success:', result)
+                          // Optionally refresh the work data or update UI
+                        }}
+                      />
+                    )}
+                    
                     {/* NFT 操作按钮 */}
                     {nftStatus && (
                       <NFTActionButtons
@@ -449,6 +473,17 @@ export function WorkCard({
                         <Bookmark className="w-3.5 h-3.5 mr-1.5 fill-current" />
                         Collect
                       </Button>
+                    )}
+                    
+                    {/* Mint to Blockchain Button - for database-only works */}
+                    {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
+                      <MintToBlockchainButton 
+                        work={work}
+                        onMintSuccess={(result) => {
+                          console.log('Mint success:', result)
+                          // Optionally refresh the work data or update UI
+                        }}
+                      />
                     )}
                     
                     {/* NFT 操作按钮 */}
