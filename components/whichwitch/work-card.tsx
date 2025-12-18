@@ -4,12 +4,15 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Bookmark, GitFork, Share2, Coins, Trash2, Clock, Folder, Lock, Upload, RefreshCcw, Eye } from "lucide-react"
+import { Heart, Bookmark, GitFork, Share2, Coins, Trash2, Clock, Folder, Lock, Upload, RefreshCcw, Eye, Shield, ShoppingCart, Copy, Maximize2, Minimize2, X, Flag } from "lucide-react"
 import { NFTStatusBadge, NFTStatus } from "./nft-status-badge"
 import { NFTActionButtons } from "./nft-action-buttons"
 import { MintNFTModal, BuyNFTModal, ListNFTModal } from "./nft-modals"
 import { MintNFTModal as RetroactiveMintModal } from "./mint-nft-modal"
 import { MintToBlockchainButton } from "./mint-to-blockchain-button"
+import { MintNFTModal as NewMintModal, SellNFTModal } from "./nft-mint-sell-modals"
+import { ContentModerationModal } from "./content-moderation-modal"
+import { ReportModal } from "./report-modal"
 import {
   Dialog,
   DialogContent,
@@ -81,6 +84,13 @@ export function WorkCard({
   const [showMintNFTModal, setShowMintNFTModal] = useState(false)
   const [showBuyNFTModal, setShowBuyNFTModal] = useState(false)
   const [showListNFTModal, setShowListNFTModal] = useState(false)
+  
+  // 新的NFT功能状态
+  const [showNewMintModal, setShowNewMintModal] = useState(false)
+  const [showSellModal, setShowSellModal] = useState(false)
+  
+  // 内容审核状态
+  const [showContentModerationModal, setShowContentModerationModal] = useState(false)
   
   useEffect(() => {
     setLiked(initialLiked)
@@ -300,47 +310,50 @@ export function WorkCard({
 
             <div className="flex gap-2">
               {isSquareView ? (
-                /* 广场页面 - 显示收藏和二创授权按钮 */
-                <div className="flex gap-2">
-                  {/* 二创授权按钮 */}
+                /* 广场页面 - 只显示图标按钮 */
+                <div className="flex gap-1">
+                  {/* 二创授权按钮 - 只显示图标 */}
                   {canBeRemixed && onRemix && (
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="h-8 bg-transparent border-primary/30 hover:border-primary/60 hover:bg-primary/5 text-primary"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
                       onClick={(e) => {
                         e.stopPropagation()
                         onRemix()
                       }}
+                      title="Request Remix"
                     >
-                      <GitFork className="w-3.5 h-3.5 mr-1.5" />
-                      Remix
+                      <GitFork className="w-4 h-4" />
                     </Button>
                   )}
                   
-                  {/* Mint to Blockchain Button - for database-only works */}
-                  {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
-                    <MintToBlockchainButton 
-                      work={work}
-                      onMintSuccess={(result) => {
-                        console.log('Mint success:', result)
-                        // Optionally refresh the work data or update UI
-                      }}
-                    />
-                  )}
-                  
-                  {/* 收藏按钮 */}
+                  {/* AI审核按钮 - 只显示图标 */}
                   <Button
                     size="sm"
-                    variant="default"
-                    className="h-8 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-orange-600 hover:bg-orange-50"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowContentModerationModal(true)
+                    }}
+                    title="AI Content Review"
+                  >
+                    <Shield className="w-4 h-4" />
+                  </Button>
+                  
+                  {/* 收藏按钮 - 只显示图标 */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowCollectModal(true)
                     }}
+                    title="Collect Work"
                   >
-                    <Bookmark className="w-3.5 h-3.5 mr-1.5 fill-current" />
-                    Collect
+                    <Bookmark className="w-4 h-4" />
                   </Button>
                 </div>
               ) : onUnsave ? (
@@ -400,12 +413,7 @@ export function WorkCard({
                         Retry
                       </Button>
                     )}
-                    {status === "failed" && (
-                      <Button size="sm" variant="destructive" className="h-8" onClick={onRemix}>
-                        <RefreshCcw className="w-3.5 h-3.5 mr-1.5" />
-                        Retry
-                      </Button>
-                    )}
+
                     
                     {/* Mint to Blockchain Button - for database-only works */}
                     {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
@@ -418,7 +426,71 @@ export function WorkCard({
                       />
                     )}
                     
-                    {/* NFT 操作按钮 */}
+                    {/* AI审核按钮 - 始终显示，让用户可以审核任何作品 */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 border-orange-500 text-orange-600 hover:bg-orange-50"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowContentModerationModal(true)
+                      }}
+                    >
+                      <Shield className="w-3.5 h-3.5 mr-1.5" />
+                      AI Review
+                    </Button>
+
+                    {/* 新的NFT功能按钮 - 根据用户行为链条 */}
+                    {work.is_on_chain && work.upload_status === 'minted' && (
+                      <>
+                        {/* 铸造NFT按钮 - 当作品已上链但未铸造NFT时显示 */}
+                        {(!nftStatus?.isNFT) && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShowNewMintModal(true)
+                            }}
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            Mint NFT
+                          </Button>
+                        )}
+                        
+                        {/* 出售按钮 - 当NFT已铸造且用户拥有时显示 */}
+                        {nftStatus?.isNFT && nftStatus?.isOwned && !nftStatus?.isListed && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 border-green-500 text-green-600 hover:bg-green-50"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShowSellModal(true)
+                            }}
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                            Sell
+                          </Button>
+                        )}
+                        
+                        {/* 已上架显示 */}
+                        {nftStatus?.isListed && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled
+                            className="h-8 opacity-70"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                            Listed ({nftStatus.price} ETH)
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* 原有的NFT 操作按钮 */}
                     {nftStatus && (
                       <NFTActionButtons
                         isNFT={nftStatus.isNFT}
@@ -461,6 +533,20 @@ export function WorkCard({
                         )}
                       </Button>
                     )}
+                    
+                    {/* AI审核按钮 - 在Profile页面也显示 */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 border-orange-500 text-orange-600 hover:bg-orange-50"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowContentModerationModal(true)
+                      }}
+                    >
+                      <Shield className="w-3.5 h-3.5 mr-1.5" />
+                      AI Review
+                    </Button>
                     
                     {/* 收藏按钮 */}
                     {!isRemixable && (
@@ -589,6 +675,44 @@ export function WorkCard({
           />
         </>
       )}
+
+      {/* 新的NFT功能模态框 */}
+      <NewMintModal
+        open={showNewMintModal}
+        onOpenChange={setShowNewMintModal}
+        work={work}
+        onMint={async (nftData) => {
+          console.log('🎨 Minting NFT with data:', nftData)
+          // TODO: 实现实际的NFT铸造逻辑
+          // 暂时模拟成功
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          console.log('✅ NFT minted successfully (mock)')
+        }}
+      />
+      
+      <SellNFTModal
+        open={showSellModal}
+        onOpenChange={setShowSellModal}
+        work={work}
+        onList={async (listingData) => {
+          console.log('🛒 Listing NFT for sale:', listingData)
+          // TODO: 实现实际的NFT上架逻辑
+          // 暂时模拟成功
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          console.log('✅ NFT listed successfully (mock)')
+        }}
+      />
+
+      {/* 内容审核模态框 */}
+      <ContentModerationModal
+        open={showContentModerationModal}
+        onOpenChange={setShowContentModerationModal}
+        work={work}
+        onModerationComplete={(result) => {
+          console.log('🛡️ Content moderation completed:', result)
+          // TODO: 根据审核结果更新作品状态
+        }}
+      />
     </>
   )
 }
@@ -843,12 +967,49 @@ export function WorkDetailDialog({
   onRemix?: () => void
   canBeRemixed?: boolean
 }) {
+  const { address } = useAccount()
   // Defensive check at the top of the component
   if (!work) return null
 
   const [selectedRemixer, setSelectedRemixer] = useState(0)
   const [derivatives, setDerivatives] = useState<any[]>([])
   const [loadingDerivatives, setLoadingDerivatives] = useState(false)
+  
+  // 点赞相关状态
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(work.likes || 0)
+  
+  // 模态框状态
+  const [showCollectModal, setShowCollectModal] = useState(false)
+  const [showTipModal, setShowTipModal] = useState(false)
+  const [showContentModerationModal, setShowContentModerationModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  
+  // 全屏状态
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  
+  // 复制ID到剪贴板
+  const copyToClipboard = (text: string | number) => {
+    navigator.clipboard.writeText(String(text))
+    // TODO: 添加toast提示
+    console.log('Copied to clipboard:', text)
+  }
+
+  // 点赞处理函数
+  const handleLike = async () => {
+    if (!address) {
+      console.error('User not connected')
+      return
+    }
+    
+    try {
+      const newLikedState = await toggleLike(work.id, address)
+      setLiked(newLikedState)
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1)
+    } catch (error) {
+      console.error('Failed to toggle like:', error)
+    }
+  }
 
   // 加载衍生作品
   useEffect(() => {
@@ -900,7 +1061,48 @@ export function WorkDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[60vw] h-[80vh] flex flex-col p-0 gap-0 bg-background/95 backdrop-blur-xl border-primary/20 overflow-hidden">
+      <DialogContent className={`${isFullscreen ? 'max-w-[100vw] h-[100vh] m-0 rounded-none' : 'max-w-[60vw] h-[80vh]'} flex flex-col p-0 gap-0 bg-background/95 backdrop-blur-xl border-primary/20 overflow-hidden transition-all duration-300`}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Work Details: {work?.title || 'Untitled'}</DialogTitle>
+        </DialogHeader>
+        
+        {/* 顶部控制栏 */}
+        <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold">{work?.title || 'Untitled'}</h2>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>ID:</span>
+              <button
+                onClick={() => copyToClipboard(work?.work_id || work?.id)}
+                className="flex items-center gap-1 px-2 py-1 bg-muted hover:bg-muted/80 rounded transition-colors"
+                title="Click to copy work ID"
+              >
+                <span className="font-mono">{work?.work_id || work?.id}</span>
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="h-8 w-8 p-0"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto p-6 grid md:grid-cols-2 gap-8">
           {/* Left Column: Images */}
           <div className="space-y-4">
@@ -932,6 +1134,7 @@ export function WorkDetailDialog({
               </div>
             </div>
 
+            {/* 作品基本信息 */}
             <div className="space-y-4 text-sm text-muted-foreground">
               <p>{work.story}</p>
               <div className="grid grid-cols-2 gap-4">
@@ -952,18 +1155,60 @@ export function WorkDetailDialog({
               </div>
             </div>
 
-            {/* Action Buttons Section */}
+            {/* 授权类型信息 */}
             <div className="pt-4 border-t border-border/50">
-              <h3 className="font-bold text-lg mb-4">Actions</h3>
-              <div className="flex flex-wrap gap-3">
-                {/* NFT Status Badge */}
-                {nftStatus && (
-                  <div className="mb-2">
-                    <NFTStatusBadge status={nftStatus} />
+              <h3 className="font-bold text-lg mb-3">License & Permissions</h3>
+              <div className="space-y-3">
+                {work.allowRemix ? (
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <GitFork className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-green-600">Remixing Allowed</span>
+                    </div>
+                    {/* TODO: 显示具体的许可证信息 */}
+                    <div className="text-xs text-muted-foreground">
+                      License fee: {work.license_fee || '0'} ETH
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-red-500" />
+                      <span className="font-medium text-red-500">All Rights Reserved</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      This work cannot be used for derivatives
+                    </div>
                   </div>
                 )}
-                
-                {/* Remix Button */}
+              </div>
+            </div>
+
+            {/* 用户行为按钮 */}
+            <div className="pt-4 border-t border-border/50">
+              <h3 className="font-bold text-lg mb-3">User Actions</h3>
+              <div className="flex flex-wrap gap-3">
+                {/* 点赞按钮 */}
+                <Button
+                  variant="ghost"
+                  className={`${liked ? "text-pink-500" : "text-muted-foreground hover:text-pink-500"} transition-colors`}
+                  onClick={handleLike}
+                >
+                  <Heart className={`w-4 h-4 mr-2 ${liked ? "fill-current" : ""}`} />
+                  Like ({likeCount})
+                </Button>
+
+                {/* 收藏按钮 */}
+                <Button
+                  variant="outline"
+                  className="bg-transparent border-primary/30 hover:border-primary/60 hover:bg-primary/5 text-primary"
+                  onClick={() => setShowCollectModal(true)}
+                >
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  Collect
+                </Button>
+
+                {/* Remix按钮 */}
                 {canBeRemixed && onRemix && (
                   <Button
                     variant="outline"
@@ -971,60 +1216,120 @@ export function WorkDetailDialog({
                     onClick={onRemix}
                   >
                     <GitFork className="w-4 h-4 mr-2" />
-                    Request Remix Authorization
+                    Request Remix
                   </Button>
                 )}
-                
-                {/* NFT Action Buttons */}
-                {nftStatus && (
-                  <div className="flex gap-2">
-                    {!nftStatus.isNFT && onMintNFT && (
-                      <Button
-                        variant="default"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={onMintNFT}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Mint as NFT
-                      </Button>
-                    )}
-                    
-                    {nftStatus.isListed && !nftStatus.isOwned && onBuyNFT && (
-                      <Button
-                        variant="default"
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={onBuyNFT}
-                      >
-                        <Coins className="w-4 h-4 mr-2" />
-                        Buy NFT ({nftStatus.price} ETH)
-                      </Button>
-                    )}
-                    
-                    {nftStatus.isOwned && !nftStatus.isListed && onListNFT && (
-                      <Button
-                        variant="outline"
-                        className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                        onClick={onListNFT}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        List for Sale
-                      </Button>
-                    )}
-                    
-                    {nftStatus.isNFT && !nftStatus.isListed && !nftStatus.isOwned && (
-                      <Button
-                        variant="outline"
-                        disabled
-                        className="opacity-50"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        NFT (Not for Sale)
-                      </Button>
-                    )}
-                  </div>
+
+                {/* Tip按钮 */}
+                <Button
+                  variant="outline"
+                  className="bg-transparent border-yellow-500/30 hover:border-yellow-500/60 hover:bg-yellow-50 text-yellow-600"
+                  onClick={() => setShowTipModal(true)}
+                >
+                  <Coins className="w-4 h-4 mr-2" />
+                  Tip Creator
+                </Button>
+
+                {/* 举报按钮 - 不能举报自己的作品 */}
+                {work.creator_address?.toLowerCase() !== address?.toLowerCase() && (
+                  <Button
+                    variant="outline"
+                    className="bg-transparent border-red-500/30 hover:border-red-500/60 hover:bg-red-50 text-red-600"
+                    onClick={() => setShowReportModal(true)}
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report
+                  </Button>
                 )}
               </div>
             </div>
+
+            {/* 作者行为按钮 - 只有作者才能看到 */}
+            {work.creator_address?.toLowerCase() === address?.toLowerCase() && (
+              <div className="pt-4 border-t border-border/50">
+                <h3 className="font-bold text-lg mb-3">Creator Actions</h3>
+                <div className="flex flex-wrap gap-3">
+                  {/* AI内容审核按钮 */}
+                  <Button
+                    variant="outline"
+                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                    onClick={() => setShowContentModerationModal(true)}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    AI Content Review
+                  </Button>
+
+                  {/* NFT相关按钮 */}
+                  {nftStatus && (
+                    <>
+                      {!nftStatus.isNFT && onMintNFT && (
+                        <Button
+                          variant="default"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={onMintNFT}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Mint as NFT
+                        </Button>
+                      )}
+                      
+                      {nftStatus.isOwned && !nftStatus.isListed && onListNFT && (
+                        <Button
+                          variant="outline"
+                          className="border-green-500 text-green-600 hover:bg-green-50"
+                          onClick={onListNFT}
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          List for Sale
+                        </Button>
+                      )}
+                    </>
+                  )}
+
+                  {/* Mint to Blockchain按钮 */}
+                  {(!work.is_on_chain && work.upload_status !== 'minted' && work.upload_status !== 'nft_minted') && (
+                    <MintToBlockchainButton 
+                      work={work}
+                      onMintSuccess={(result) => {
+                        console.log('Mint success:', result)
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* NFT状态显示 - 非作者也能看到 */}
+            {nftStatus && work.creator_address?.toLowerCase() !== address?.toLowerCase() && (
+              <div className="pt-4 border-t border-border/50">
+                <h3 className="font-bold text-lg mb-3">NFT Status</h3>
+                <div className="flex flex-wrap gap-3">
+                  <NFTStatusBadge status={nftStatus} />
+                  
+                  {nftStatus.isListed && !nftStatus.isOwned && onBuyNFT && (
+                    <Button
+                      variant="default"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={onBuyNFT}
+                    >
+                      <Coins className="w-4 h-4 mr-2" />
+                      Buy NFT ({nftStatus.price} ETH)
+                    </Button>
+                  )}
+                  
+                  {nftStatus.isNFT && !nftStatus.isListed && !nftStatus.isOwned && (
+                    <Button
+                      variant="outline"
+                      disabled
+                      className="opacity-50"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      NFT (Not for Sale)
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Genealogy Section */}
             <div className="pt-6 border-t border-border/50">
@@ -1109,6 +1414,43 @@ export function WorkDetailDialog({
           </div>
         </div>
       </DialogContent>
+      
+      {/* 模态框组件 */}
+      <CollectModal
+        open={showCollectModal}
+        onOpenChange={setShowCollectModal}
+        workTitle={work.title}
+        folders={[]} // TODO: 传入实际的folders
+        onCreateFolder={() => {}} // TODO: 传入实际的函数
+        onSave={(folder) => {
+          console.log('Collect work to folder:', folder)
+          setShowCollectModal(false)
+        }}
+      />
+      
+      <TipModal 
+        open={showTipModal} 
+        onOpenChange={setShowTipModal} 
+        work={work} 
+      />
+      
+      <ContentModerationModal
+        open={showContentModerationModal}
+        onOpenChange={setShowContentModerationModal}
+        work={work}
+        onModerationComplete={(result) => {
+          console.log('Content moderation completed:', result)
+        }}
+      />
+      
+      <ReportModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        work={work}
+        onReportComplete={(result) => {
+          console.log('Report completed:', result)
+        }}
+      />
     </Dialog>
   )
 }

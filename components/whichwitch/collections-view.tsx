@@ -30,11 +30,13 @@ export function CollectionsView({
   folders: propFolders,
   onCreateFolder: propOnCreateFolder,
   onUploadRemix,
+  onUploadWork,
 }: {
   onUnsave: (id: number) => void
   folders: string[]
   onCreateFolder: (name: string) => void
   onUploadRemix?: (workId: number) => void
+  onUploadWork?: (workData: any) => void
 }) {
   const { user } = useUser()
   const { 
@@ -203,8 +205,15 @@ export function CollectionsView({
       return // Button should be disabled, but just in case
     }
     if (work.collectionStatus === "approved") {
-      // 切换到 Create tab 并预选 parent work
-      if (onUploadRemix) {
+      // 触发上传结果页面而不是切换到Create tab
+      if (onUploadWork) {
+        onUploadWork({
+          id: work.id,
+          title: work.title,
+          image: work.images?.[0] || work.image
+        })
+      } else if (onUploadRemix) {
+        // 备用方案：切换到 Create tab
         onUploadRemix(work.id)
       }
     } else {

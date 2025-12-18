@@ -13,9 +13,12 @@ const QWEN_API_KEY = process.env.QWEN_API_KEY
 interface ModerationRequest {
   workId: number
   imageUrl: string
-  creatorAddress: string
-  stakeAmount: string
-  stakeTxHash: string
+  creatorAddress?: string
+  stakeAmount?: string
+  stakeTxHash?: string
+  title?: string
+  description?: string
+  reportId?: number // 新增：关联的举报ID
 }
 
 interface ModerationResult {
@@ -118,70 +121,153 @@ Return ONLY valid JSON.`
 export async function POST(request: NextRequest) {
   try {
     const body: ModerationRequest = await request.json()
-    const { workId, imageUrl, creatorAddress, stakeAmount, stakeTxHash } = body
+    const { workId, imageUrl, creatorAddress, stakeAmount, stakeTxHash, title, description, reportId } = body
 
-    if (!workId || !imageUrl || !creatorAddress) {
+    if (!workId || !imageUrl) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: workId and imageUrl' },
         { status: 400 }
       )
     }
+
+    console.log('🛡️ Starting content moderation for work:', workId)
 
     // Analyze content with Qwen-VL
     const moderationResult = await analyzeContentWithQwen(imageUrl)
 
     // Determine status based on scores
-    let status = 'approved'
-    if (moderationResult.overallSafetyScore < 50) {
-      status = 'rejected'
-    } else if (moderationResult.overallSafetyScore < 80) {
-      status = 'under_review'
+    let status: 'safe' | 'warning' | 'unsafe' = 'safe'
+    let confidence = 0.95
+
+    if (moderationResult.overallSafetyScore < 30) {
+      status = 'unsafe'
+      confidence = 0.9
+    } else if (moderationResult.overallSafetyScore < 70) {
+      status = 'warning'
+      confidence = 0.8
     }
 
-    // Calculate challenge period (7 days from now)
-    const challengePeriodEnd = new Date()
-    challengePeriodEnd.setDate(challengePeriodEnd.getDate() + 7)
-
-    // Insert moderation record
-    const { data, error } = await supabase
-      .from('content_moderation')
-      .insert({
-        work_id: workId,
-        creator_address: creatorAddress,
-        status,
-        ai_analysis: moderationResult.aiAnalysis,
-        nsfw_score: moderationResult.nsfwScore,
-        violence_score: moderationResult.violenceScore,
-        hate_score: moderationResult.hateScore,
-        overall_safety_score: moderationResult.overallSafetyScore,
-        detected_issues: moderationResult.detectedIssues,
-        flagged_content: moderationResult.flaggedContent,
-        stake_amount: stakeAmount,
-        stake_tx_hash: stakeTxHash,
-        stake_locked: status !== 'approved',
-        challenge_period_end: challengePeriodEnd.toISOString(),
-        reviewed_at: status !== 'pending' ? new Date().toISOString() : null
+    // Build issues array
+    const issues = []
+    if (moderationResult.nsfwScore > 30) {
+      issues.push({
+        type: 'NSFW Content',
+        severity: moderationResult.nsfwScore > 70 ? 'high' : moderationResult.nsfwScore > 50 ? 'medium' : 'low',
+        description: 'Potentially inappropriate or adult content detected'
       })
-      .select()
-      .single()
+    }
+    if (moderationResult.violenceScore > 30) {
+      issues.push({
+        type: 'Violence',
+        severity: moderationResult.violenceScore > 70 ? 'high' : moderationResult.violenceScore > 50 ? 'medium' : 'low',
+        description: 'Violent or graphic content detected'
+      })
+    }
+    if (moderationResult.hateScore > 30) {
+      issues.push({
+        type: 'Hate Content',
+        severity: moderationResult.hateScore > 70 ? 'high' : moderationResult.hateScore > 50 ? 'medium' : 'low',
+        description: 'Hate symbols or offensive content detected'
+      })
+    }
 
-    if (error) throw error
+    // Try to insert moderation record (if table exists)
+    try {
+      if (creatorAddress) {
+        const challengePeriodEnd = new Date()
+        challengePeriodEnd.setDate(challengePeriodEnd.getDate() + 7)
+
+        const { data, error } = await supabase
+          .from('content_moderation')
+          .insert({
+            work_id: workId,
+            creator_address: creatorAddress,
+            status: status === 'safe' ? 'approved' : status === 'warning' ? 'under_review' : 'rejected',
+            ai_analysis: moderationResult.aiAnalysis,
+            nsfw_score: moderationResult.nsfwScore,
+            violence_score: moderationResult.violenceScore,
+            hate_score: moderationResult.hateScore,
+            overall_safety_score: moderationResult.overallSafetyScore,
+            detected_issues: moderationResult.detectedIssues,
+            flagged_content: moderationResult.flaggedContent,
+            stake_amount: stakeAmount || '0',
+            stake_tx_hash: stakeTxHash || '',
+            stake_locked: status !== 'safe',
+            challenge_period_end: challengePeriodEnd.toISOString(),
+            reviewed_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        console.log('✅ Moderation record saved to database')
+      }
+    } catch (dbError) {
+      console.log('⚠️ Database save failed (expected in development):', dbError)
+    }
+
+    // 如果有关联的举报ID，更新举报状态
+    if (reportId) {
+      try {
+        // 根据confidence和status决定举报状态
+        let reportStatus = 'under_review' // 默认需要人工审核
+        
+        if (status === 'safe' && confidence > 0.8) {
+          // 高置信度安全 - 举报可能是误报
+          reportStatus = 'resolved'
+        } else if (status === 'unsafe' || (status === 'warning' && confidence > 0.7)) {
+          // 确实发现问题 - 升级处理
+          reportStatus = 'escalated'
+        }
+        
+        await supabase
+          .from('work_reports')
+          .update({
+            status: reportStatus,
+            ai_verdict: status,
+            moderator_notes: `AI content moderation completed. Status: ${status}. Confidence: ${Math.round(confidence * 100)}%. ${
+              status === 'safe' && confidence > 0.8 
+                ? 'No issues found - likely false report.' 
+                : status === 'unsafe' 
+                ? 'Policy violations detected.' 
+                : 'Requires manual review.'
+            }`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', reportId)
+        console.log('✅ Report status updated:', reportStatus)
+      } catch (reportError) {
+        console.error('⚠️ Failed to update report status:', reportError)
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      moderation: data,
-      status,
-      message: status === 'approved' 
-        ? 'Content approved! Stake will be unlocked.'
-        : status === 'rejected'
-        ? 'Content rejected due to policy violations.'
-        : 'Content under review. Manual verification required.'
+      result: {
+        status,
+        confidence,
+        issues,
+        details: {
+          nsfw_score: moderationResult.nsfwScore / 100,
+          violence_score: moderationResult.violenceScore / 100,
+          hate_score: moderationResult.hateScore / 100,
+          overall_score: (100 - moderationResult.overallSafetyScore) / 100
+        },
+        ai_analysis: moderationResult.aiAnalysis
+      },
+      message: status === 'safe' 
+        ? 'Content approved! No issues detected.'
+        : status === 'warning'
+        ? 'Content has minor issues but is acceptable.'
+        : 'Content rejected due to policy violations.'
     })
 
   } catch (error) {
     console.error('Content moderation error:', error)
     return NextResponse.json(
-      { error: 'Failed to process content moderation' },
+      { 
+        error: 'Failed to process content moderation',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

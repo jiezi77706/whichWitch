@@ -18,6 +18,15 @@ export interface WorkUploadData {
   licenseFee: string
   isRemix: boolean
   parentWorkId?: number
+  // 许可证信息
+  licenseSelection?: {
+    commercial: string
+    derivative: string
+    nft: string
+    shareAlike: string
+    licenseName: string
+    description: string
+  }
 }
 
 export interface WorkCreationResult {
@@ -114,6 +123,7 @@ export async function uploadWorkToDatabase(
       licenseFee: workData.licenseFee,
       isRemix: workData.isRemix,
       parentWorkId: workData.parentWorkId,
+      licenseSelection: workData.licenseSelection,
     }
     
     console.log('📋 准备保存的数据:', dbWorkData)

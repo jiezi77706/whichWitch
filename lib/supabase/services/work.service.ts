@@ -102,6 +102,15 @@ export async function createWork(workData: {
   licenseFee?: string;
   parentWorkId?: number;
   isRemix: boolean;
+  // 许可证信息
+  licenseSelection?: {
+    commercial: string;
+    derivative: string;
+    nft: string;
+    shareAlike: string;
+    licenseName: string;
+    description: string;
+  };
 }): Promise<Work> {
   try {
     const response = await fetch('/api/works/create', {

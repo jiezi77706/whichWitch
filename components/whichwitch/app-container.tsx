@@ -4,10 +4,12 @@ import { useState } from "react"
 import { AuthView } from "./auth-view"
 import { UploadView } from "./upload-view"
 import { SquareView } from "./square-view"
+import { MarketplaceView } from "./marketplace-view"
 import { CollectionsView } from "./collections-view"
 import { ProfileView } from "./profile-view"
+import { UploadResultPage } from "./upload-result-page"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Upload, Grid, Bookmark, User } from "lucide-react"
+import { Upload, Grid, Bookmark, User, ShoppingCart } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { works as initialWorks } from "@/lib/mock-data"
@@ -24,10 +26,21 @@ export function WhichwitchApp() {
   const [activeTab, setActiveTab] = useState("square")
   const [folders, setFolders] = useState(["Inspiration", "To Remix", "Favorites", "Research"])
   const [preselectedParentWork, setPreselectedParentWork] = useState<number | null>(null)
+  
+  // 上传结果页面状态
+  const [showUploadResult, setShowUploadResult] = useState(false)
+  const [uploadWorkData, setUploadWorkData] = useState<any>(null)
 
   // TODO: 这些函数需要连接到实际的服务
   const handleAddWork = (newWork: any) => {
-    // 将在 upload-view 中实现
+    // 显示上传结果页面
+    setUploadWorkData({
+      id: newWork.work?.workId,
+      title: newWork.work?.title || 'Untitled',
+      image: newWork.work?.imageUrl || '/placeholder.svg',
+      creator: user?.did || 'Unknown'
+    })
+    setShowUploadResult(true)
     console.log('Add work:', newWork)
   }
 
@@ -49,6 +62,23 @@ export function WhichwitchApp() {
 
   if (!user) {
     return <AuthView onLogin={setUser} />
+  }
+
+  // 显示上传结果页面
+  if (showUploadResult && uploadWorkData) {
+    return (
+      <UploadResultPage
+        workData={uploadWorkData}
+        onBackToSquare={() => {
+          setShowUploadResult(false)
+          setActiveTab("square")
+        }}
+        onRetry={() => {
+          setShowUploadResult(false)
+          setActiveTab("upload")
+        }}
+      />
+    )
   }
 
   return (
@@ -77,6 +107,12 @@ export function WhichwitchApp() {
             onClick={() => setActiveTab("square")}
             icon={Grid}
             label="Square"
+          />
+          <DesktopNavButton
+            active={activeTab === "marketplace"}
+            onClick={() => setActiveTab("marketplace")}
+            icon={ShoppingCart}
+            label="Marketplace"
           />
           <DesktopNavButton
             active={activeTab === "collections"}
@@ -133,6 +169,9 @@ export function WhichwitchApp() {
                   onCreateFolder={handleCreateFolder}
                 />
               </TabsContent>
+              <TabsContent value="marketplace" className="mt-0">
+                <MarketplaceView />
+              </TabsContent>
               <TabsContent value="collections" className="mt-0">
                 <CollectionsView
                   onUnsave={handleUnsave}
@@ -141,6 +180,16 @@ export function WhichwitchApp() {
                   onUploadRemix={(workId) => {
                     setPreselectedParentWork(workId)
                     setActiveTab("upload")
+                  }}
+                  onUploadWork={(workData) => {
+                    // 触发上传结果页面
+                    setUploadWorkData({
+                      id: workData.id,
+                      title: workData.title || 'Remix Work',
+                      image: workData.image || '/placeholder.svg',
+                      creator: user?.did || 'Unknown'
+                    })
+                    setShowUploadResult(true)
                   }}
                 />
               </TabsContent>
@@ -160,6 +209,12 @@ export function WhichwitchApp() {
             onClick={() => setActiveTab("square")}
             icon={Grid}
             label="Square"
+          />
+          <NavButton
+            active={activeTab === "marketplace"}
+            onClick={() => setActiveTab("marketplace")}
+            icon={ShoppingCart}
+            label="Market"
           />
           <NavButton
             active={activeTab === "collections"}

@@ -1,208 +1,107 @@
-# 修复 moderation-dashboard.tsx
+# AI Content Moderation System - Integration Fix
 
-由于文件系统问题，请手动创建此文件。
+## Issues Fixed
 
-## 方法1：从编辑器复制（推荐）
+### 1. Accessibility Issue - Missing DialogTitle
+**Problem**: `WorkDetailDialog` was missing a `DialogTitle` for screen reader accessibility.
 
-文件内容已经在你的 IDE 编辑器中打开（`components/whichwitch/moderation-dashboard.tsx`），请：
+**Solution**: Added `DialogHeader` with `DialogTitle` using `sr-only` class to make it accessible but visually hidden.
 
-1. 从编辑器中全选并复制内容
-2. 在终端运行：
-```bash
-nano components/whichwitch/moderation-dashboard.tsx
-# 粘贴内容
-# 按 Ctrl+X, 然后 Y, 然后 Enter 保存
+**Location**: `components/whichwitch/work-card.tsx` - WorkDetailDialog component
+
+### 2. AI审核按钮 (AI Review Button) Visibility
+**Problem**: The AI Review button was only visible in Collections view, not in Square view or Profile view.
+
+**Solution**: Added AI Review button to all views:
+- ✅ Square View (广场页面)
+- ✅ Collections View (收藏页面) 
+- ✅ Profile View (个人页面)
+
+**Location**: `components/whichwitch/work-card.tsx`
+- Added AI Review button in Square View section (line ~350)
+- Added AI Review button in Profile Tab Actions section (line ~420)
+- Existing AI Review button in Collections View (line ~380)
+
+### 2. Upload Result Page Integration
+**Problem**: "Upload Work" button was not triggering the upload result page.
+
+**Solution**: 
+- ✅ Added `onUploadWork` prop to `app-container.tsx`
+- ✅ Updated `collections-view.tsx` to accept and use `onUploadWork` prop
+- ✅ Modified `handleRemixClick` to trigger upload result page when status is "approved"
+
+**Flow**: Upload Work Button → `handleRemixClick()` → `onUploadWork()` → Upload Result Page
+
+## Components Updated
+
+### 1. `components/whichwitch/work-card.tsx`
+- Added AI Review button to Square View
+- Added AI Review button to Profile View
+- Changed button text from "Content Review" to "AI Review" for consistency
+
+### 2. `components/whichwitch/app-container.tsx`
+- Added `onUploadWork` handler that triggers upload result page
+- Passes `onUploadWork` prop to CollectionsView
+
+### 3. `components/whichwitch/collections-view.tsx`
+- Added `onUploadWork` prop to interface
+- Updated `handleRemixClick` to call `onUploadWork` when status is "approved"
+- Falls back to `onUploadRemix` if `onUploadWork` is not available
+
+## How to Test
+
+### Test AI Review Button
+1. Go to Square page (广场页面)
+2. Look for orange "AI Review" button on each work card
+3. Click the button - should open Content Moderation Modal
+4. Repeat test on Collections and Profile pages
+
+### Test Upload Work Flow
+1. Go to Collections page (收藏页面)
+2. Find a work with "approved" status (green "Upload Work" button)
+3. Click "Upload Work" button
+4. Should navigate to Upload Result Page showing processing animation
+5. Should show progress: IPFS Upload → AI Moderation → Blockchain Processing
+
+## Current Implementation Status
+
+### ✅ Completed
+- AI Review button visible on all pages
+- Content Moderation Modal working
+- Upload Result Page created and integrated
+- API endpoint for AI content moderation
+- Progress animation and status handling
+
+### 🔄 Needs Backend Connection
+- Qwen-VL API integration (requires API key in .env)
+- Database tables for content moderation
+- Actual blockchain integration for upload processing
+
+## Environment Variables Needed
+
+Add to `.env.local`:
+```
+QWEN_API_URL=https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+QWEN_API_KEY=your_qwen_api_key_here
 ```
 
-## 方法2：使用简化版本（快速修复）
+## Next Steps
 
-运行以下命令创建一个简化但可用的版本：
+1. **Verify Button Visibility**: Check that AI Review buttons appear on all pages
+2. **Test Modal Functionality**: Ensure Content Moderation Modal opens correctly
+3. **Test Upload Flow**: Verify Upload Work button triggers Upload Result Page
+4. **Add API Keys**: Configure Qwen-VL API for actual AI moderation
+5. **Database Setup**: Create content_moderation table if needed
 
-```bash
-cat > components/whichwitch/moderation-dashboard.tsx << 'ENDOFFILE'
-"use client"
+## Troubleshooting
 
-import { useState, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Shield, Eye } from "lucide-react"
-import { useAccount } from "wagmi"
-import { DisputeReportViewer } from "./dispute-report-viewer"
+If buttons are still not visible:
+1. Check browser console for JavaScript errors
+2. Verify component imports are correct
+3. Clear browser cache and reload
+4. Check if work data has required fields (id, title, image)
 
-export function ModerationDashboard() {
-  const { address } = useAccount()
-  const [moderations, setModerations] = useState<any[]>([])
-  const [disputes, setDisputes] = useState<any[]>([])
-  const [selectedDispute, setSelectedDispute] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    if (address) {
-      fetchData()
-    }
-  }, [address])
-
-  const fetchData = async () => {
-    setIsLoading(true)
-    try {
-      const modResponse = await fetch(\`/api/ai/content-moderation?address=\${address}\`)
-      const modData = await modResponse.json()
-      setModerations(modData.moderations || [])
-
-      const dispResponse = await fetch(\`/api/ai/copyright-dispute?address=\${address}\`)
-      const dispData = await dispResponse.json()
-      setDisputes(dispData.disputes || [])
-    } catch (error) {
-      console.error('Failed to fetch data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (!address) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Please connect your wallet to view moderation dashboard</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Shield className="w-8 h-8 text-primary" />
-        <div>
-          <h2 className="text-2xl font-bold">AI Moderation Dashboard</h2>
-          <p className="text-sm text-muted-foreground">
-            View content moderation results and copyright disputes
-          </p>
-        </div>
-      </div>
-
-      <Tabs defaultValue="moderations" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="moderations">
-            Content Moderation ({moderations.length})
-          </TabsTrigger>
-          <TabsTrigger value="disputes">
-            Copyright Disputes ({disputes.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="moderations" className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading...</div>
-          ) : moderations.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              No moderation records found
-            </div>
-          ) : (
-            <ScrollArea className="h-[600px] pr-4">
-              <div className="space-y-3">
-                {moderations.map((mod) => (
-                  <Card key={mod.id} className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <p className="font-semibold">{mod.work?.title || \`Work #\${mod.work_id}\`}</p>
-                        <Badge>{mod.status}</Badge>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div className="p-2 bg-muted rounded">
-                          <p className="text-muted-foreground">Safety</p>
-                          <p className="font-semibold">{mod.overall_safety_score?.toFixed(0)}%</p>
-                        </div>
-                        <div className="p-2 bg-muted rounded">
-                          <p className="text-muted-foreground">NSFW</p>
-                          <p className="font-semibold">{mod.nsfw_score?.toFixed(0)}%</p>
-                        </div>
-                        <div className="p-2 bg-muted rounded">
-                          <p className="text-muted-foreground">Violence</p>
-                          <p className="font-semibold">{mod.violence_score?.toFixed(0)}%</p>
-                        </div>
-                        <div className="p-2 bg-muted rounded">
-                          <p className="text-muted-foreground">Hate</p>
-                          <p className="font-semibold">{mod.hate_score?.toFixed(0)}%</p>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
-
-        <TabsContent value="disputes" className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading...</div>
-          ) : disputes.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              No copyright disputes found
-            </div>
-          ) : (
-            <ScrollArea className="h-[600px] pr-4">
-              <div className="space-y-3">
-                {disputes.map((dispute) => (
-                  <Card key={dispute.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <p className="font-semibold">Dispute #{dispute.id}</p>
-                        <Badge>{dispute.status}</Badge>
-                      </div>
-                      {dispute.similarity_score !== null && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium">Overall Similarity</span>
-                            <Badge variant="outline">{dispute.similarity_score?.toFixed(1)}%</Badge>
-                          </div>
-                        </div>
-                      )}
-                      <Button
-                        onClick={() => setSelectedDispute(dispute)}
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Full Report
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <DisputeReportViewer
-        isOpen={!!selectedDispute}
-        onClose={() => setSelectedDispute(null)}
-        dispute={selectedDispute}
-      />
-    </div>
-  )
-}
-ENDOFFILE
-```
-
-## 验证
-
-运行以下命令验证文件已创建：
-
-```bash
-ls -lh components/whichwitch/moderation-dashboard.tsx
-cat components/whichwitch/moderation-dashboard.tsx | head -20
-```
-
-## 测试
-
-```bash
-npm run dev
-# 访问 http://localhost:3000/app/moderation
-```
-
-如果还有问题，请直接在 IDE 中创建文件并从编辑器复制内容。
+If Upload Result Page doesn't show:
+1. Verify work has "approved" status in Collections
+2. Check console for errors in `handleRemixClick`
+3. Ensure `onUploadWork` prop is passed correctly

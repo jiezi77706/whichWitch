@@ -65,6 +65,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 如果有许可证信息且允许remix，保存许可证信息
+    if (workData.licenseSelection && workData.allowRemix) {
+      console.log('💾 Saving license information...');
+      
+      try {
+        const { error: licenseError } = await supabaseAdmin
+          .rpc('save_work_license', {
+            p_work_id: workData.workId,
+            p_commercial: workData.licenseSelection.commercial,
+            p_derivative: workData.licenseSelection.derivative,
+            p_nft: workData.licenseSelection.nft,
+            p_sharealike: workData.licenseSelection.shareAlike,
+          });
+
+        if (licenseError) {
+          console.error('⚠️ License save failed:', licenseError);
+          // 不阻止作品创建，只记录错误
+        } else {
+          console.log('✅ License information saved successfully');
+        }
+      } catch (licenseErr) {
+        console.error('⚠️ License save error:', licenseErr);
+        // 不阻止作品创建
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error in create work API:', error);

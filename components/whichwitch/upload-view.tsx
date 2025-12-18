@@ -103,6 +103,7 @@ export function UploadView({
         licenseFee: formData.licenseFee,
         isRemix: mode === "remix",
         parentWorkId: mode === "remix" ? selectedParentWork : undefined,
+        licenseSelection: allowRemix ? licenseSelection : undefined,
       }
 
       console.log('📤 Step 1: Upload work to database and IPFS...')
@@ -623,7 +624,7 @@ export function UploadView({
                 </div>
 
                 {/* Display selected license */}
-                {licenseSelection && (
+                {licenseSelection ? (
                   <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                     <p className="text-xs font-medium text-green-600 mb-2">✓ License Selected:</p>
                     <p className="font-bold text-sm">{licenseSelection.licenseName}</p>
@@ -644,6 +645,11 @@ export function UploadView({
                         {licenseSelection.shareAlike === 'D1' ? 'ShareAlike' : 'No SA'}
                       </span>
                     </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-xs font-medium text-red-600 mb-1">⚠️ License Required</p>
+                    <p className="text-xs text-muted-foreground">Please select a license type to enable remixing</p>
                   </div>
                 )}
               </div>
@@ -716,7 +722,7 @@ export function UploadView({
         <Button
           type="submit"
           className="w-full h-12 text-lg"
-          disabled={files.length === 0 || !formData.title || status === "uploading" || (mode === "remix" && !selectedParentWork)}
+          disabled={files.length === 0 || !formData.title || status === "uploading" || (mode === "remix" && !selectedParentWork) || (allowRemix && !licenseSelection)}
         >
           {status === "uploading" 
             ? (mintNFT ? "Uploading & Minting..." : "Uploading...") 
